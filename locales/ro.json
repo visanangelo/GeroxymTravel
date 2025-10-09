@@ -1,0 +1,20 @@
+{
+  "navigation": {
+    "home": "Acasă",
+    "destinations": "Destinații",
+    "tours": "Ture",
+    "about": "Despre Noi",
+    "contact": "Contact"
+  },
+  "hero": {
+    "title": "Descoperă Lumea cu Geroxym Travel",
+    "subtitle": "Aventuri extraordinare, experiențe memorabile, amintiri pentru totdeauna",
+    "cta": "Începe Aventura"
+  },
+  "footer": {
+    "company": "Geroxym Travel",
+    "description": "Soluțiile tale complete pentru călătorii extraordinare",
+    "rights": "Toate drepturile rezervate"
+  }
+}
+

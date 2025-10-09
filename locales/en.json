@@ -1,0 +1,20 @@
+{
+  "navigation": {
+    "home": "Home",
+    "destinations": "Destinations",
+    "tours": "Tours",
+    "about": "About Us",
+    "contact": "Contact"
+  },
+  "hero": {
+    "title": "Discover the World with Geroxym Travel",
+    "subtitle": "Extraordinary adventures, memorable experiences, memories forever",
+    "cta": "Start Adventure"
+  },
+  "footer": {
+    "company": "Geroxym Travel",
+    "description": "Your complete solutions for extraordinary travels",
+    "rights": "All rights reserved"
+  }
+}
+
