@@ -1,19 +1,23 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Poppins, Inter } from "next/font/google"
+import { Syne, Inter } from "next/font/google"
+import { ToasterPortal } from "@/components/ToasterPortal"
 import "./globals.css"
 import { Suspense } from "react"
 
-const poppins = Poppins({
+/** Premium display font – Marcelo Design X style: bold sans, cinematic headlines */
+const syne = Syne({
   subsets: ["latin"],
-  variable: "--font-poppins",
-  weight: ["400", "500", "600", "700", "800", "900"],
+  variable: "--font-syne",
+  weight: ["500", "600", "700", "800"],
+  display: "swap",
 })
 
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "500", "600"],
+  display: "swap",
 })
 
 export const metadata: Metadata = {
@@ -36,9 +40,10 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="ro" className={`${poppins.variable} ${inter.variable} dark`}>
-      <body className="font-sans antialiased bg-[#111111] text-white">
+    <html lang="ro" className={`${syne.variable} ${inter.variable}`}>
+      <body className="font-sans antialiased bg-background text-foreground">
         <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
+        <ToasterPortal />
       </body>
     </html>
   )

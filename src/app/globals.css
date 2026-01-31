@@ -3,40 +3,41 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Tourism / Voyager Tours palette: warm cream background, green primary (hue 145) */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --background: oklch(0.96 0.01 80);
+  --foreground: oklch(0.25 0.04 145);
+  --card: oklch(0.99 0.005 80);
+  --card-foreground: oklch(0.25 0.04 145);
+  --popover: oklch(0.99 0.005 80);
+  --popover-foreground: oklch(0.25 0.04 145);
+  --primary: oklch(0.35 0.08 145);
+  --primary-foreground: oklch(0.98 0.01 80);
+  --secondary: oklch(0.92 0.02 80);
+  --secondary-foreground: oklch(0.30 0.06 145);
+  --muted: oklch(0.94 0.015 80);
+  --muted-foreground: oklch(0.45 0.03 145);
+  --accent: oklch(0.40 0.10 145);
+  --accent-foreground: oklch(0.98 0.01 80);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --border: oklch(0.88 0.02 80);
+  --input: oklch(0.90 0.02 80);
+  --ring: oklch(0.40 0.08 145);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --radius: 0.625rem;
+  --radius: 0.75rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar-primary: oklch(0.35 0.08 145);
+  --sidebar-primary-foreground: oklch(0.98 0.01 80);
+  --sidebar-accent: oklch(0.92 0.02 80);
+  --sidebar-accent-foreground: oklch(0.30 0.06 145);
+  --sidebar-border: oklch(0.88 0.02 80);
+  --sidebar-ring: oklch(0.40 0.08 145);
 }
 
 .dark {
@@ -75,8 +76,9 @@
 }
 
 @theme inline {
-  /* Adding Poppins as primary font for cinematic bold headings */
-  --font-sans: var(--font-poppins);
+  /* Marcelo Design X: Syne for display/headings, Inter for body */
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-syne);
   --font-mono: var(--font-geist-mono);
   --font-body: var(--font-inter);
   --color-background: var(--background);
@@ -117,82 +119,87 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
-:root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-}
-
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
-}
-
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
   }
+}
+
+/* Marcelo Design X – premium cinematic typography & accents */
+.font-display {
+  font-family: var(--font-syne), var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
+/* Headlines: readable, balanced weight + light shadow */
+.text-impact {
+  font-family: var(--font-syne), var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+.text-impact-hero {
+  font-family: var(--font-syne), var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.2;
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.25), 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+/* Dark overlays (parallax, route hero) */
+.text-impact-dark {
+  font-family: var(--font-syne), var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.35), 0 1px 6px rgba(0, 0, 0, 0.2);
+}
+.tracking-cinematic {
+  letter-spacing: 0.35em;
+}
+.tracking-label {
+  letter-spacing: 0.2em;
+}
+.accent-line {
+  width: 2rem;
+  height: 2px;
+  background: linear-gradient(90deg, var(--primary) 0%, transparent 100%);
+  border-radius: 1px;
+}
+.accent-line-vertical {
+  width: 2px;
+  height: 2rem;
+  background: linear-gradient(180deg, var(--primary) 0%, transparent 100%);
+  border-radius: 1px;
+}
+
+/* Route card hover: quick lift + shadow + image zoom + arrow */
+.route-card {
+  transform: translateZ(0);
+  will-change: transform;
+  transition:
+    transform 0.28s cubic-bezier(0.42, 0, 1, 1),
+    box-shadow 0.28s ease-out;
+}
+.route-card:hover {
+  transform: translateY(-6px) scale(1.01) translateZ(0);
+  box-shadow:
+    0 24px 48px -12px rgba(0, 0, 0, 0.12),
+    0 12px 24px -8px rgba(0, 0, 0, 0.08);
+}
+.route-card-image {
+  transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.route-card:hover .route-card-image {
+  transform: scale(1.06);
+}
+.route-card-arrow {
+  transition:
+    background-color 0.22s ease-out,
+    color 0.22s ease-out,
+    transform 0.22s cubic-bezier(0.42, 0, 1, 1);
+}
+.route-card:hover .route-card-arrow {
+  transform: translate(2px, -2px);
 }
 
 /* Performance optimizations for parallax */
@@ -283,23 +290,74 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Enhanced scrollbar for cinematic dark theme */
+/* Ultra-fast transitions for admin navigation - GPU accelerated */
+.admin-page-transition {
+  animation: fadeInUltraFast 0.1s ease-out forwards;
+  will-change: opacity, transform;
+  transform: translateZ(0); /* Force GPU layer */
+}
+
+@keyframes fadeInUltraFast {
+  from {
+    opacity: 0;
+    transform: translateY(4px) translateZ(0);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) translateZ(0);
+  }
+}
+
+/* GPU-accelerated link transitions for admin */
+a[href^="/admin"] {
+  transition: transform 0.1s ease-out, opacity 0.1s ease-out;
+  will-change: transform;
+  transform: translateZ(0); /* Force GPU acceleration */
+}
+
+a[href^="/admin"]:hover {
+  transform: scale(0.98) translateZ(0);
+}
+
+a[href^="/admin"]:active {
+  transform: scale(0.96) translateZ(0);
+}
+
+/* Optimize link transitions for other links (exclude .route-card – has its own hover) */
+a[href^="/"]:not([href^="/admin"]):not(.route-card) {
+  transition: opacity 0.15s ease-in-out;
+}
+
+a[href^="/"]:not([href^="/admin"]):not(.route-card):hover {
+  opacity: 0.8;
+}
+
+/* View Transitions API support (when available) */
+@supports (view-transition-name: none) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 0.15s;
+    animation-timing-function: ease-out;
+  }
+}
+
+/* Scrollbar – tourism style (cream + green) */
 ::-webkit-scrollbar {
-  width: 12px;
+  width: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0a0a0a;
+  background: oklch(0.94 0.015 80);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #0eb582 0%, #0ca572 100%);
-  border-radius: 6px;
-  border: 2px solid #0a0a0a;
+  background: oklch(0.35 0.08 145);
+  border-radius: 5px;
+  border: 2px solid oklch(0.96 0.01 80);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #0ca572 0%, #0a9563 100%);
+  background: oklch(0.30 0.09 145);
 }
 
 /* Enhanced text shadows for better contrast */
@@ -323,3 +381,32 @@ html {
 .glow-teal-strong {
   box-shadow: 0 0 30px rgba(14, 181, 130, 0.5), 0 0 60px rgba(14, 181, 130, 0.3), 0 0 90px rgba(14, 181, 130, 0.1);
 }
+
+/* Sonner: toast deasupra Sheet/Dialog, doar toast-urile primesc click (nu lista) ca pe mobil Copy din Sheet să funcționeze */
+[data-sonner-toaster] {
+  z-index: 2147483647 !important;
+  position: fixed !important;
+  pointer-events: none !important;
+}
+[data-sonner-toast] {
+  pointer-events: auto !important;
+}
+
+/* Pe mobil: vizibil sub notch/safe area, full width */
+@media (max-width: 600px) {
+  [data-sonner-toaster] {
+    top: max(env(safe-area-inset-top), 8px) !important;
+    left: 8px !important;
+    right: 8px !important;
+    width: calc(100% - 16px) !important;
+  }
+}
+
+[data-sonner-toast] [data-close-button] {
+  position: relative !important;
+  z-index: 100 !important;
+  pointer-events: auto !important;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+}
+
