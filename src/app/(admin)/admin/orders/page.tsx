@@ -20,6 +20,7 @@ const ITEMS_PER_PAGE = 20
 export const dynamic = 'force-dynamic'
 
 // Cache orders query for instant navigation
+// Note: revalidate cannot be used together with dynamic = 'force-dynamic'
 const getOrders = cache(async (from: number, to: number) => {
   const supabase = await createClient()
   return supabase
@@ -48,9 +49,6 @@ const getOrders = cache(async (from: number, to: number) => {
     .order('created_at', { ascending: false })
     .range(from, to)
 })
-
-// Revalidate every 30 seconds for fresh data
-export const revalidate = 30
 
 type Props = {
   params: Promise<Record<string, never>>

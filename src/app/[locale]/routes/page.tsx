@@ -4,7 +4,6 @@ import Link from 'next/link'
 import RoutesListClient from './RoutesListClient'
 import { getFilteredRoutes } from './actions'
 
-export const dynamic = 'force-dynamic'
 export const revalidate = 60
 
 type Props = {

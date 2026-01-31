@@ -238,7 +238,7 @@ async function RecentRoutesTable({ period, dateFilter }: { period: string; dateF
   )
 }
 
-export const revalidate = DASHBOARD_CACHE_REVALIDATE
+export const revalidate = 15
 
 export default async function AdminDashboardPage({ params, searchParams }: Props) {
   await params

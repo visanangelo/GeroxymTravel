@@ -10,7 +10,6 @@ import { MapPin, Calendar, Clock, Users, ArrowLeft, CheckCircle2 } from 'lucide-
 import { formatCurrency } from '@/lib/utils'
 import RouteBookingForm from '@/components/routes/RouteBookingForm'
 
-export const dynamic = 'force-dynamic'
 export const revalidate = 30 // Revalidate route details every 30 seconds
 
 type Props = {
