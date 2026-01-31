@@ -30,6 +30,13 @@ export async function createCheckoutSessionForOrder(
   const successUrl = `${baseUrl}/${locale}/checkout/success?orderId=${order.id}&session_id={CHECKOUT_SESSION_ID}`
   const cancelUrl = `${baseUrl}/${locale}/checkout/confirm?orderId=${order.id}`
 
+  // Text afișat pe Stripe Checkout – poți modifica aici
+  const productName = 'Bilet autocar - Geroxym Travel'
+  const productDescription =
+    order.quantity === 1
+      ? '1 bilet'
+      : `${order.quantity} bilete`
+
   const session = await stripe.checkout.sessions.create({
     mode: 'payment',
     line_items: [
@@ -39,8 +46,8 @@ export async function createCheckoutSessionForOrder(
           currency: (order.currency || 'ron').toLowerCase(),
           unit_amount: Math.round(order.amount_cents / order.quantity),
           product_data: {
-            name: 'Bus ticket',
-            description: `${order.quantity} ticket(s)`,
+            name: productName,
+            description: productDescription,
           },
         },
       },

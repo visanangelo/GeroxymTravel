@@ -12,6 +12,9 @@ type Props = {
   children: React.ReactNode
 }
 
+// Force dynamic: admin uses Supabase auth/data; do not prerender at build (env may be missing on Vercel)
+export const dynamic = 'force-dynamic'
+
 // Default locale for admin (no locale in URL)
 const DEFAULT_LOCALE = 'ro'
 
