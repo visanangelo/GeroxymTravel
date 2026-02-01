@@ -30,13 +30,19 @@ export default function RouteSearchFilters({
   isPending,
 }: Props) {
   return (
-    <form onSubmit={onSubmit} className="mb-10 rounded-xl bg-secondary border border-border px-6 py-5">
-      <div className="flex flex-col gap-4 md:flex-row md:items-end md:gap-4">
-        <div className="flex-1 min-w-0">
-          <label className="mb-1.5 block text-sm font-medium text-foreground">Oraș plecare</label>
+    <form
+      onSubmit={onSubmit}
+      className="rounded-2xl border border-border bg-card shadow-sm ring-1 ring-black/5 px-5 py-5 sm:px-6 sm:py-6"
+    >
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:gap-4">
+        <div className="flex-1 min-w-0 space-y-1.5">
+          <label htmlFor="route-origin" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            Plecare
+          </label>
           <Input
-            className="bg-card border-input"
-            placeholder="Alege oraș..."
+            id="route-origin"
+            className="h-10 bg-background border-input focus-visible:ring-2"
+            placeholder="ex. Drobeta-Turnu Severin"
             value={origin}
             onChange={(e) => onOriginChange(e.target.value)}
             type="text"
@@ -44,11 +50,14 @@ export default function RouteSearchFilters({
             aria-busy={isPending}
           />
         </div>
-        <div className="flex-1 min-w-0">
-          <label className="mb-1.5 block text-sm font-medium text-foreground">Destinație</label>
+        <div className="flex-1 min-w-0 space-y-1.5">
+          <label htmlFor="route-destination" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            Destinație
+          </label>
           <Input
-            className="bg-card border-input"
-            placeholder="Alege destinația..."
+            id="route-destination"
+            className="h-10 bg-background border-input focus-visible:ring-2"
+            placeholder="ex. București, Constanța"
             value={destination}
             onChange={(e) => onDestinationChange(e.target.value)}
             type="text"
@@ -56,23 +65,39 @@ export default function RouteSearchFilters({
             aria-busy={isPending}
           />
         </div>
-        <div className="flex-1 min-w-0">
-          <label className="mb-1.5 block text-sm font-medium text-foreground">Data</label>
+        <div className="flex-1 min-w-0 space-y-1.5">
+          <label htmlFor="route-date" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            Data plecării
+          </label>
           <Input
+            id="route-date"
             type="date"
-            className="bg-card border-input"
+            className="h-10 bg-background border-input focus-visible:ring-2"
             value={date}
             onChange={(e) => onDateChange(e.target.value)}
             aria-busy={isPending}
           />
         </div>
-        <div className="flex gap-2">
-          <Button type="submit" size="sm" className="rounded-full px-6" disabled={isPending}>
+        <div className="flex gap-2 pt-1 sm:pt-0">
+          <Button
+            type="submit"
+            size="default"
+            className="h-10 rounded-lg px-5 font-medium shadow-sm"
+            disabled={isPending}
+          >
             <Search className="mr-2 h-4 w-4" />
-            {isPending ? 'Se caută…' : 'Caută rute'}
+            {isPending ? 'Se caută…' : 'Caută'}
           </Button>
           {hasActiveFilters && (
-            <Button type="button" variant="outline" size="icon" onClick={onClear} aria-label="Șterge filtre" disabled={isPending}>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="h-10 w-10 rounded-lg shrink-0"
+              onClick={onClear}
+              aria-label="Șterge filtre căutare"
+              disabled={isPending}
+            >
               <X className="h-4 w-4" />
             </Button>
           )}

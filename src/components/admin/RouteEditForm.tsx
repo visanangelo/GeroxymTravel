@@ -40,6 +40,8 @@ type Route = {
   image_url?: string | null
   description?: string | null
   homepage_position?: number | null
+  route_category?: string | null
+  route_subcategory?: string | null
 }
 
 type Props = {
@@ -58,6 +60,22 @@ const HOMEPAGE_POSITION_OPTIONS = [
   { value: '6', label: 'Poziția 6' },
 ]
 
+const ROUTE_CATEGORY_OPTIONS = [
+  { value: '', label: 'Niciuna' },
+  { value: 'intern', label: 'Interne' },
+  { value: 'extern', label: 'Externe' },
+  { value: 'pelerinaj', label: 'Pelerinaje' },
+  { value: 'sejur_mare', label: 'Sejur la mare' },
+]
+
+const SEJUR_SUBCATEGORY_OPTIONS = [
+  { value: '', label: '—' },
+  { value: 'grecia', label: 'Grecia' },
+  { value: 'turcia', label: 'Turcia' },
+  { value: 'albania', label: 'Albania' },
+  { value: 'bulgaria', label: 'Bulgaria' },
+]
+
 export default function RouteEditForm({ locale, route }: Props) {
   const router = useRouter()
   const [error, setError] = useState<string | null>(null)
@@ -65,6 +83,8 @@ export default function RouteEditForm({ locale, route }: Props) {
   const [homepagePosition, setHomepagePosition] = useState(
     route.homepage_position != null ? String(route.homepage_position) : ''
   )
+  const [routeCategory, setRouteCategory] = useState(route.route_category ?? '')
+  const [routeSubcategory, setRouteSubcategory] = useState(route.route_subcategory ?? '')
   const submittingRef = useRef(false)
 
   async function handleSubmit(formData: FormData) {
@@ -216,6 +236,48 @@ export default function RouteEditForm({ locale, route }: Props) {
                 </option>
               ))}
             </select>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="route_category">Categorie circuit</Label>
+              <select
+                id="route_category"
+                name="route_category"
+                value={routeCategory}
+                onChange={(e) => {
+                  setRouteCategory(e.target.value)
+                  if (e.target.value !== 'sejur_mare') setRouteSubcategory('')
+                }}
+                disabled={loading}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {ROUTE_CATEGORY_OPTIONS.map((opt) => (
+                  <option key={opt.value || 'none'} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {routeCategory === 'sejur_mare' && (
+              <div className="space-y-2">
+                <Label htmlFor="route_subcategory">Destinație sejur la mare</Label>
+                <select
+                  id="route_subcategory"
+                  name="route_subcategory"
+                  value={routeSubcategory}
+                  onChange={(e) => setRouteSubcategory(e.target.value)}
+                  disabled={loading}
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {SEJUR_SUBCATEGORY_OPTIONS.map((opt) => (
+                    <option key={opt.value || 'none'} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
           <RouteImageUpload

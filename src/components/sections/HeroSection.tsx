@@ -22,12 +22,12 @@ export default function HeroSection() {
       <div className="relative z-10 text-center max-w-5xl px-6 animate-fade-in-up flex-1 flex flex-col items-center justify-center">
         <div className="flex flex-col items-center gap-3 mb-5">
           <div className="accent-line" aria-hidden />
-          <p className="font-display text-white/95 text-xl uppercase tracking-cinematic font-semibold drop-shadow-md">
+          <p className="font-display text-white/95 text-xs lg:text-xl uppercase tracking-cinematic font-semibold drop-shadow-md">
             Descoperă Lumea cu Noi
           </p>
         </div>
-        <h1 className="text-impact-hero text-3xl sm:text-4xl md:text-5xl lg:text-7xl text-white mb-5 text-balance">
-          Călătorește cu Geroxym
+        <h1 className="text-impact-hero uppercase text-4xl sm:text-4xl md:text-5xl lg:text-7xl text-white mb-5 text-balance">
+          CĂLĂTOREȘTE CU GEROXYM
           <br />
           
         </h1>

@@ -133,6 +133,8 @@ export async function createRoute(formData: FormData, locale?: string) {
   const homepagePosition = parseHomepagePosition(formData.get('homepage_position') as string | null)
   const description = (formData.get('description') as string) || null
   const imageFile = formData.get('image') as File | null
+  const routeCategory = (formData.get('route_category') as string) || null
+  const routeSubcategory = (formData.get('route_subcategory') as string) || null
 
   const capacityOnline = capacityTotal - reserveOffline
 
@@ -183,6 +185,8 @@ export async function createRoute(formData: FormData, locale?: string) {
       image_url: imageUrl,
       description: description || null,
       homepage_position: homepagePosition,
+      route_category: routeCategory || null,
+      route_subcategory: routeSubcategory || null,
       created_by: user.id,
     })
     .select()
@@ -232,6 +236,8 @@ export async function updateRoute(
   const description = (formData.get('description') as string) || null
   const imageFile = formData.get('image') as File | null
   const removeImage = formData.get('remove_image') === '1'
+  const routeCategory = (formData.get('route_category') as string) || null
+  const routeSubcategory = (formData.get('route_subcategory') as string) || null
 
   const { data: currentRoute } = await supabase
     .from('routes')
@@ -248,6 +254,8 @@ export async function updateRoute(
     status: status as 'active' | 'cancelled' | 'draft',
     description: description || null,
     homepage_position: homepagePosition,
+    route_category: routeCategory || null,
+    route_subcategory: routeSubcategory || null,
   }
 
   if (homepagePosition !== null) {

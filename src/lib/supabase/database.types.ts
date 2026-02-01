@@ -47,6 +47,8 @@ export interface Database {
           image_url: string | null
           description: string | null
           homepage_position: number | null
+          route_category: string | null
+          route_subcategory: string | null
           created_by: string
           created_at: string
           updated_at: string
@@ -65,6 +67,8 @@ export interface Database {
           image_url?: string | null
           description?: string | null
           homepage_position?: number | null
+          route_category?: string | null
+          route_subcategory?: string | null
           created_by: string
           created_at?: string
           updated_at?: string
@@ -83,6 +87,8 @@ export interface Database {
           image_url?: string | null
           description?: string | null
           homepage_position?: number | null
+          route_category?: string | null
+          route_subcategory?: string | null
           created_by?: string
           created_at?: string
           updated_at?: string

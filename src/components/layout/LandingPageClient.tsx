@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import ScrollNavigation from './ScrollNavigation'
 import BackToTopButton from './BackToTopButton'
-import LandingHeader from './LandingHeader'
 
 export type InitialAuth = {
   isLoggedIn: boolean
@@ -13,13 +12,12 @@ export type InitialAuth = {
 type Props = {
   children: React.ReactNode
   locale?: string
-  initialAuth?: InitialAuth
 }
 
 // Memoize section IDs to avoid recreating array on each render
 const SECTION_IDS = ['home', 'search', 'galerie', 'despre', 'parallax', 'recenzii'] as const
 
-export default function LandingPageClient({ children, locale = 'ro', initialAuth }: Props) {
+export default function LandingPageClient({ children, locale = 'ro' }: Props) {
   const [activeSection, setActiveSection] = useState(1)
   const [showBackToTop, setShowBackToTop] = useState(false)
   const observerRef = useRef<IntersectionObserver | null>(null)
@@ -41,21 +39,6 @@ export default function LandingPageClient({ children, locale = 'ro', initialAuth
   const scrollToTop = useCallback(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [])
-
-  const handleNavClick = useCallback((e: React.MouseEvent<HTMLAnchorElement>, target: string) => {
-    e.preventDefault()
-    if (target === 'home') {
-      scrollToTop()
-    } else {
-      const element = document.getElementById(target)
-      if (element) {
-        const headerOffset = 80
-        const elementPosition = element.getBoundingClientRect().top
-        const offsetPosition = elementPosition + window.pageYOffset - headerOffset
-        window.scrollTo({ top: offsetPosition, behavior: 'smooth' })
-      }
-    }
-  }, [scrollToTop])
 
   // Use Intersection Observer for scroll detection (more performant than scroll events)
   useEffect(() => {
@@ -139,12 +122,6 @@ export default function LandingPageClient({ children, locale = 'ro', initialAuth
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
-      <LandingHeader
-        locale={locale}
-        initialAuth={initialAuth}
-        onNavClick={handleNavClick}
-        onScrollToTop={scrollToTop}
-      />
       {children}
       <ScrollNavigation activeSection={activeSection} onSectionClick={scrollToSection} />
       <BackToTopButton show={showBackToTop} onClick={scrollToTop} />

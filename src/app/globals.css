@@ -142,7 +142,7 @@
 .text-impact-hero {
   font-family: var(--font-syne), var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   font-weight: 700;
-  letter-spacing: 0;
+  letter-spacing: 0rem;
   line-height: 1.2;
   text-shadow: 0 2px 16px rgba(0, 0, 0, 0.25), 0 1px 4px rgba(0, 0, 0, 0.15);
 }
@@ -200,6 +200,16 @@
 }
 .route-card:hover .route-card-arrow {
   transform: translate(2px, -2px);
+}
+
+/* Routes page: category pills – scroll orizontal pe mobil, fără scrollbar vizibil */
+.routes-category-scroll {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.routes-category-scroll::-webkit-scrollbar {
+  display: none;
 }
 
 /* Performance optimizations for parallax */

@@ -1,5 +1,4 @@
 import dynamic from 'next/dynamic'
-import { createClient } from '@/lib/supabase/server'
 import HeroSection from '@/components/sections/HeroSection'
 import SearchSection from '@/components/sections/SearchSection'
 import PopularRoutesSection from '@/components/sections/PopularRoutesSection'
@@ -40,31 +39,10 @@ type Props = {
 
 export default async function GeroxyMTravelPage({ params }: Props) {
   const { locale } = await params
-  const [popularRoutes, supabase] = await Promise.all([
-    getHomepagePopularRoutes(),
-    createClient(),
-  ])
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  let role: 'admin' | 'user' | null = null
-  if (user) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .maybeSingle()
-    role = profile?.role === 'admin' ? 'admin' : 'user'
-  }
-
-  const initialAuth = {
-    isLoggedIn: !!user,
-    role,
-  }
+  const popularRoutes = await getHomepagePopularRoutes()
 
   return (
-    <LandingPageClient locale={locale} initialAuth={initialAuth}>
+    <LandingPageClient locale={locale}>
       {/* Above the fold - critical content */}
       <HeroSection />
       <SearchSection />

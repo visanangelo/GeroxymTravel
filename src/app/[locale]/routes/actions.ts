@@ -16,33 +16,61 @@ export type RouteWithAvailability = {
   capacity_total: number
   status: string
   image_url: string | null
+  route_category: string | null
+  route_subcategory: string | null
   onlineRemaining: number
   onlineSold: number
 }
 
 const ROUTES_CACHE_REVALIDATE = 10
+/** When no filters: load more for client-side filtering (single request, then realtime filter/sort). */
+const ROUTES_INITIAL_LIMIT = 200
+const ROUTES_FILTERED_LIMIT = 50
+
+const ROUTE_CATEGORIES = ['intern', 'extern', 'pelerinaj', 'sejur_mare'] as const
+const SEJUR_SUBCATEGORIES = ['grecia', 'turcia', 'albania', 'bulgaria'] as const
+const VALID_SORT_OPTIONS = ['price_asc', 'price_desc'] as const
+
+/** Sanitizează input text pentru prevenirea XSS/injection */
+function sanitizeTextInput(input: string): string {
+  return input
+    .trim()
+    .slice(0, 100) // Max 100 caractere
+    .replace(/[<>{}]/g, '') // Remove caractere HTML periculoase
+}
 
 async function fetchFilteredRoutesUncached(filters: {
   origin?: string
   destination?: string
   date?: string
+  category?: string
+  subcategory?: string
+  sortBy?: string
 }): Promise<{ routes: RouteWithAvailability[]; error: string | null }> {
   const serviceClient = createServiceClient()
-  const { origin, destination, date } = filters
+  
+  // Sanitizare input text pentru prevenirea XSS/injection
+  const cleanOrigin = filters.origin ? sanitizeTextInput(filters.origin) : undefined
+  const cleanDestination = filters.destination ? sanitizeTextInput(filters.destination) : undefined
+  const { date, category, subcategory, sortBy } = filters
+
+  const hasFilters = Boolean(
+    cleanOrigin || cleanDestination || date || category || subcategory
+  )
+  const limit = hasFilters ? ROUTES_FILTERED_LIMIT : ROUTES_INITIAL_LIMIT
 
   let query = serviceClient
     .from('routes')
-    .select('id, origin, destination, depart_at, price_cents, currency, capacity_online, capacity_total, status, image_url')
+    .select('id, origin, destination, depart_at, price_cents, currency, capacity_online, capacity_total, status, image_url, route_category, route_subcategory')
     .eq('status', 'active')
     .gte('depart_at', new Date().toISOString())
-    .order('depart_at', { ascending: true })
-    .limit(50)
+    .limit(limit)
 
-  if (origin?.trim()) {
-    query = query.ilike('origin', `%${origin.trim()}%`)
+  if (cleanOrigin) {
+    query = query.ilike('origin', `%${cleanOrigin}%`)
   }
-  if (destination?.trim()) {
-    query = query.ilike('destination', `%${destination.trim()}%`)
+  if (cleanDestination) {
+    query = query.ilike('destination', `%${cleanDestination}%`)
   }
   if (date) {
     const dateStart = new Date(date)
@@ -50,6 +78,26 @@ async function fetchFilteredRoutesUncached(filters: {
     const dateEnd = new Date(date)
     dateEnd.setHours(23, 59, 59, 999)
     query = query.gte('depart_at', dateStart.toISOString()).lte('depart_at', dateEnd.toISOString())
+  }
+  // Validare categoria: doar valori din whitelist
+  if (category && ROUTE_CATEGORIES.includes(category as (typeof ROUTE_CATEGORIES)[number])) {
+    query = query.eq('route_category', category)
+  }
+  // Validare subcategoria: doar valori din whitelist
+  if (subcategory && SEJUR_SUBCATEGORIES.includes(subcategory as (typeof SEJUR_SUBCATEGORIES)[number])) {
+    query = query.eq('route_subcategory', subcategory)
+  }
+
+  // Validare sortBy: doar opțiuni din whitelist
+  if (sortBy && VALID_SORT_OPTIONS.includes(sortBy as (typeof VALID_SORT_OPTIONS)[number])) {
+    if (sortBy === 'price_asc') {
+      query = query.order('price_cents', { ascending: true }).order('depart_at', { ascending: true })
+    } else if (sortBy === 'price_desc') {
+      query = query.order('price_cents', { ascending: false }).order('depart_at', { ascending: true })
+    }
+  } else {
+    // Default: date ascending
+    query = query.order('depart_at', { ascending: true })
   }
 
   const { data: routes, error } = await query
@@ -96,11 +144,22 @@ export async function getFilteredRoutes(
     origin?: string
     destination?: string
     date?: string
+    category?: string
+    subcategory?: string
+    sortBy?: string
     requestId?: string
   }
 ): Promise<{ routes: RouteWithAvailability[]; error: string | null; requestId?: string }> {
   const { requestId, ...cacheFilters } = filters
-  const key = ['routes-filtered', cacheFilters.origin ?? '', cacheFilters.destination ?? '', cacheFilters.date ?? '']
+  const key = [
+    'routes-filtered',
+    cacheFilters.origin ?? '',
+    cacheFilters.destination ?? '',
+    cacheFilters.date ?? '',
+    cacheFilters.category ?? '',
+    cacheFilters.subcategory ?? '',
+    cacheFilters.sortBy ?? '',
+  ]
   const cached = await unstable_cache(
     () => fetchFilteredRoutesUncached(cacheFilters),
     key,

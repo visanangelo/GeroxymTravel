@@ -210,7 +210,32 @@ După ce faci o plată cu cardul de test, poți verifica că totul e în regulă
 | **Stripe Dashboard** → **Payments** | Plata apare cu suma corectă, status „Succeeded”. |
 | **Stripe Dashboard** → **Webhooks** → endpoint-ul tău → **Recent deliveries** | Ultimul eveniment `checkout.session.completed` cu răspuns 200. |
 
-**Plată refuzată (test):** folosești cardul `4000 0000 0000 0002` – Stripe afișează eroare, comanda rămâne în status `created`, nu se alocă bilete. Poți reîncerca cu un alt card sau anula.
+**Plată refuzată (test):** vezi secțiunea următoare.
+
+---
+
+## Test: „Nu are bani pe card” / plată refuzată
+
+Ca să verifici ce se întâmplă când plata e refuzată (card fără fonduri sau declinat):
+
+1. Fă fluxul normal: alege o rută → completează datele → **Pay with Card (Stripe)**.
+2. Pe pagina **Stripe Checkout** introdu cardul de test pentru **plată refuzată**:
+   - **Număr card:** `4000 0000 0000 0002`
+   - **Dată:** orice viitoare (ex. 12/34)
+   - **CVC:** orice 3 cifre (ex. 123)
+3. Apasă **Pay**. Stripe afișează o eroare (ex. „Your card was declined” / „Cardul a fost refuzat”).
+4. Rămâi pe Stripe (sau pe pagina de eroare); nu ești dus la success.
+
+**Ce verifici după:**
+
+| Unde | Ce ar trebui |
+|------|----------------|
+| **Site** | Nu apare pagina „Booking Confirmed!” – utilizatorul nu e dus la success. |
+| **Admin** → **Orders** | Comanda există cu status **created** (nu **paid**). Nu s-au alocat bilete. |
+| **Admin** → **Tickets** | Nu există bilete pentru acea comandă. |
+| **Stripe Dashboard** → **Payments** | Fie nu apare nicio plată, fie apare una cu status „Failed” / „Declined”. |
+
+Utilizatorul poate reveni la pagina de confirmare (link din email sau din browser) și poate reîncerca cu alt card (ex. `4242 4242 4242 4242`) sau abandona.
 
 ---
 
@@ -235,3 +260,34 @@ Exemple de modificări:
 - **Descriere:** poți pune rută, dată plecare etc. dacă le trimiți în obiectul `order` și le folosești aici.
 
 După modificare, salvezi și faci deploy; la următoarea plată pe Stripe se va afișa noul text.
+
+---
+
+## Facturare cu Oblio sau SmartBill
+
+Poți folosi un procesator de facturare din România (Oblio sau SmartBill) pentru facturi legale, cu serie, CUI și raportare ANAF.
+
+**Flux recomandat:**
+
+1. **După ce plata Stripe reușește** – în webhook-ul `checkout.session.completed`, după ce apelezi `finalizeOrderLogic(order_id)`:
+   - citești comanda + client din DB (nume, email, CUI/CIF dacă l-ai colectat);
+   - apelezi API-ul Oblio sau SmartBill pentru a crea factura (client, linii: bilet autocar, sumă, TVA etc.);
+   - primești înapoi ID factură + link PDF (sau PDF direct);
+   - salvezi în DB referința la factură (ex. `invoices` table: `order_id`, `oblio_id` / `smartbill_id`, `pdf_url`) și opțional trimiți PDF-ul pe email clientului.
+
+2. **Pe site:** în pagina de success și în Cont → Rezervări poți afișa un buton **„Descarcă factura”** care deschide PDF-ul sau îl descarcă (din URL-ul returnat de Oblio/SmartBill sau din storage-ul tău).
+
+**Ce ai nevoie:**
+
+| Serviciu | API / documentație | Note |
+|----------|--------------------|------|
+| **Oblio** | [oblio.eu/docs](https://www.oblio.eu/docs) | API REST, autentificare OAuth sau API key. Creezi factură cu client (CUI opțional), linii, total. |
+| **SmartBill** | [smartbill.ro/api](https://www.smartbill.ro/api) | API REST, token. Similar: creare factură, descărcare PDF. |
+
+**Date de trimis la factură (exemplu):**  
+Client: nume, email, CUI (dacă e firmă), adresă. Linie: descriere (ex. „Bilet autocar București – Brașov, 2 buc.”), cantitate, preț unitar, TVA. Total = `order.amount_cents / 100`, monedă RON.
+
+**Unde apelezi API-ul:**  
+Cel mai simplu e în același webhook Stripe (`/api/webhooks/stripe`), după `finalizeOrderLogic(order_id)`: încărci order + customer din Supabase, construiești payload-ul pentru Oblio/SmartBill, faci `POST` la endpoint-ul lor de creare factură, salvezi ID-ul și URL PDF în DB și, dacă vrei, trimiți email cu factura.
+
+Dacă vrei să implementăm pas cu pas (ex. „factură Oblio după plată Stripe”), spune și alegem un serviciu (Oblio sau SmartBill) și adăugăm pașii în cod.
