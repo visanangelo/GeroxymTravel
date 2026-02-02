@@ -13,7 +13,7 @@ import {
   User as UserIcon,
   LayoutDashboard,
 } from 'lucide-react'
-import type { InitialAuth } from './LandingPageClient'
+import type { InitialAuth } from './types'
 
 type Props = {
   locale?: string

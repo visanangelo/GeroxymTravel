@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation'
 import LandingHeader from './LandingHeader'
-import type { InitialAuth } from './LandingPageClient'
+import type { InitialAuth } from './types'
 
 type Props = {
   locale: string

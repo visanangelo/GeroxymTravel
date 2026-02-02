@@ -4,11 +4,6 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import ScrollNavigation from './ScrollNavigation'
 import BackToTopButton from './BackToTopButton'
 
-export type InitialAuth = {
-  isLoggedIn: boolean
-  role: 'admin' | 'user' | null
-}
-
 type Props = {
   children: React.ReactNode
   locale?: string
