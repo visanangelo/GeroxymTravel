@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/table'
 import { Route, Plus, Users, Ticket } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
+import PeriodSwitcher from './PeriodSwitcher'
 
 const DASHBOARD_CACHE_REVALIDATE = 15
 
@@ -165,18 +166,7 @@ async function RecentRoutesTable({ period, dateFilter }: { period: string; dateF
             <CardTitle>Routes {periodLabel}</CardTitle>
             <CardDescription>Upcoming routes scheduled for {period === 'next' ? 'next week' : 'this week'}</CardDescription>
           </div>
-          <div className="flex gap-2">
-            <Link href="/admin?period=week">
-              <Button variant={period === 'week' ? 'default' : 'outline'} size="sm">
-                This Week
-              </Button>
-            </Link>
-            <Link href="/admin?period=next">
-              <Button variant={period === 'next' ? 'default' : 'outline'} size="sm">
-                Next Week
-              </Button>
-            </Link>
-          </div>
+          <PeriodSwitcher currentPeriod={period} />
         </div>
       </CardHeader>
       <CardContent>
@@ -238,7 +228,7 @@ async function RecentRoutesTable({ period, dateFilter }: { period: string; dateF
   )
 }
 
-export const revalidate = 15
+export const dynamic = 'force-dynamic'
 
 export default async function AdminDashboardPage({ params, searchParams }: Props) {
   await params

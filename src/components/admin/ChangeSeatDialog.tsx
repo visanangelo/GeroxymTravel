@@ -23,6 +23,7 @@ import { Label } from '@/components/ui/label'
 import { Loader2, ArrowRight, CheckCircle2 } from 'lucide-react'
 import { changeSeat } from '@/lib/admin/tickets-actions'
 import { useRouter } from 'next/navigation'
+import { getSeatLabel } from '@/lib/bus-layout'
 
 type Props = {
   open: boolean
@@ -30,6 +31,8 @@ type Props = {
   ticketId: string
   routeId: string
   currentSeatNo: number
+  /** Capacitate totală rută (pentru etichetă loc); omit = layout standard 51 */
+  totalCapacity?: number
   /** When set (e.g. [locale]/admin), paths use /[locale]/admin; omit for (admin) */
   locale?: string
 }
@@ -40,8 +43,10 @@ export default function ChangeSeatDialog({
   ticketId,
   routeId,
   currentSeatNo,
+  totalCapacity,
   locale,
 }: Props) {
+  const seatLabel = (n: number) => getSeatLabel(n, totalCapacity)
   const router = useRouter()
   const [availableSeats, setAvailableSeats] = useState<number[]>([])
   const [selectedSeat, setSelectedSeat] = useState<string>('')
@@ -123,18 +128,18 @@ export default function ChangeSeatDialog({
       <DialogContent className="sm:max-w-[450px]">
         <DialogHeader>
           <DialogTitle className="text-2xl font-semibold tracking-tight">
-            Change Seat
+            Schimbă locul
           </DialogTitle>
           <DialogDescription className="text-base">
-            Select a new seat for this ticket. Current seat:{' '}
-            <span className="font-semibold text-foreground">{currentSeatNo}</span>
+            Selectează un loc nou. Loc curent:{' '}
+            <span className="font-semibold text-foreground">{seatLabel(currentSeatNo)}</span>
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
           <div className="space-y-2">
             <Label htmlFor="seat-select" className="text-sm font-medium">
-              New Seat Number
+              Loc nou
             </Label>
             {fetching ? (
               <div className="flex items-center justify-center py-8 border border-dashed rounded-lg">
@@ -156,16 +161,16 @@ export default function ChangeSeatDialog({
                     availableSeats.map((seatNo) => (
                       <SelectItem key={seatNo} value={seatNo.toString()}>
                         <div className="flex items-center justify-between w-full">
-                          <span>Seat {seatNo}</span>
+                          <span>{seatLabel(seatNo)}</span>
                           {seatNo === currentSeatNo && (
-                            <span className="text-xs text-muted-foreground ml-2">(Current)</span>
+                            <span className="text-xs text-muted-foreground ml-2">(curent)</span>
                           )}
                         </div>
                       </SelectItem>
                     ))
                   ) : (
                     <div className="px-2 py-6 text-center text-sm text-muted-foreground">
-                      No available seats
+                      Niciun loc disponibil
                     </div>
                   )}
                 </SelectContent>
@@ -178,8 +183,8 @@ export default function ChangeSeatDialog({
               <div className="flex items-center gap-2 text-sm text-muted-foreground pt-2 p-3 bg-muted/50 rounded-lg border border-border/50">
                 <ArrowRight className="h-4 w-4 text-primary shrink-0" />
                 <span>
-                  Moving from seat <strong className="text-foreground">{currentSeatNo}</strong> to
-                  seat <strong className="text-foreground">{selectedSeat}</strong>
+                  De la <strong className="text-foreground">{seatLabel(currentSeatNo)}</strong> la{' '}
+                  <strong className="text-foreground">{seatLabel(parseInt(selectedSeat))}</strong>
                 </span>
               </div>
             )}
@@ -210,7 +215,7 @@ export default function ChangeSeatDialog({
             ) : (
               <>
                 <CheckCircle2 className="mr-2 h-4 w-4" />
-                Change Seat
+                Schimbă locul
               </>
             )}
           </Button>

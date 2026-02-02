@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useMemo, useRef, useCallback, memo } from 'react'
+import { useState, useMemo, useRef, useCallback, memo, useEffect } from 'react'
 import Link from 'next/link'
-import { MapPin, ArrowRight, Calendar, Sparkles } from 'lucide-react'
+import { MapPin, ArrowRight, Calendar, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import RouteSearchFilters from '@/components/routes/RouteSearchFilters'
 import { Button } from '@/components/ui/button'
@@ -14,6 +14,15 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import type { RouteWithAvailability } from './actions'
+
+/** Opțiuni pentru câte circuite pe pagină */
+const ITEMS_PER_PAGE_OPTIONS = [
+  { value: 12, label: '12 pe pagină' },
+  { value: 24, label: '24 pe pagină' },
+  { value: 48, label: '48 pe pagină' },
+] as const
+
+const DEFAULT_ITEMS_PER_PAGE = 12
 
 const CATEGORY_LABELS: Record<string, string> = {
   intern: 'Interne',
@@ -175,6 +184,13 @@ export default function RoutesListClient({
   const [category, setCategory] = useState(validateCategory(initialCategory))
   const [subcategory, setSubcategory] = useState(validateSubcategory(initialSubcategory))
   const [sortBy, setSortBy] = useState('')
+  
+  // Paginare state
+  const [page, setPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(DEFAULT_ITEMS_PER_PAGE)
+  
+  // Ref pentru scroll la rezultate
+  const resultsRef = useRef<HTMLDivElement>(null)
 
   /** Realtime filter + sort: single source (initialRoutes), no fetch, no URL. */
   const filteredRoutes = useMemo(() => {
@@ -226,6 +242,49 @@ export default function RoutesListClient({
     return sorted
   }, [initialRoutes, category, subcategory, origin, destination, date, sortBy])
 
+  // Paginare: calculează totalPages și paginatedRoutes
+  const totalPages = Math.max(1, Math.ceil(filteredRoutes.length / itemsPerPage))
+  
+  // Reset la pagina 1 când se schimbă filtrele sau itemsPerPage
+  useEffect(() => {
+    setPage(1)
+  }, [category, subcategory, origin, destination, date, sortBy, itemsPerPage])
+
+  // Circuitele pentru pagina curentă (client-side pagination = instant)
+  const paginatedRoutes = useMemo(() => {
+    const startIndex = (page - 1) * itemsPerPage
+    return filteredRoutes.slice(startIndex, startIndex + itemsPerPage)
+  }, [filteredRoutes, page, itemsPerPage])
+
+  // Navigare paginare
+  const goToPage = useCallback((newPage: number) => {
+    const validPage = Math.max(1, Math.min(newPage, totalPages))
+    setPage(validPage)
+    // Scroll smooth la începutul rezultatelor
+    requestAnimationFrame(() => {
+      resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+  }, [totalPages])
+
+  // Keyboard shortcuts pentru navigare rapidă (← →)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Nu intercepta dacă user-ul e într-un input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+      
+      if (e.key === 'ArrowLeft' && page > 1) {
+        e.preventDefault()
+        goToPage(page - 1)
+      } else if (e.key === 'ArrowRight' && page < totalPages) {
+        e.preventDefault()
+        goToPage(page + 1)
+      }
+    }
+    
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [page, totalPages, goToPage])
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
   }
@@ -234,9 +293,8 @@ export default function RoutesListClient({
     setOrigin('')
     setDestination('')
     setDate('')
+    setPage(1)
   }
-
-  const resultsRef = useRef<HTMLDivElement>(null)
 
   const scrollToResults = useCallback(() => {
     requestAnimationFrame(() => {
@@ -463,18 +521,108 @@ export default function RoutesListClient({
           </div>
         ) : (
           <>
-            <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">{filteredRoutes.length}</span>
-              <span>{filteredRoutes.length === 1 ? 'circuit disponibil' : 'circuite disponibile'}</span>
-              <span className="hidden sm:inline" aria-hidden>·</span>
-              <span className="hidden sm:inline">Sortat: {sortLabel}</span>
+            {/* Header: count + items per page selector */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+              <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                <span className="font-medium text-foreground">{filteredRoutes.length}</span>
+                <span>{filteredRoutes.length === 1 ? 'circuit disponibil' : 'circuite disponibile'}</span>
+                {totalPages > 1 && (
+                  <>
+                    <span aria-hidden>·</span>
+                    <span>Pagina {page} din {totalPages}</span>
+                  </>
+                )}
+              </div>
+              
+              {/* Items per page selector */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground hidden sm:inline">Afișează:</span>
+                <Select
+                  value={String(itemsPerPage)}
+                  onValueChange={(v) => setItemsPerPage(Number(v))}
+                >
+                  <SelectTrigger className="w-[130px] h-9 rounded-lg">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ITEMS_PER_PAGE_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={String(opt.value)}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mt-6">
-              {filteredRoutes.map((route) => (
+            {/* Grid cu circuitele paginate */}
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {paginatedRoutes.map((route) => (
                 <RouteCard key={route.id} route={route} locale={locale} />
               ))}
             </div>
+
+            {/* Pagination controls */}
+            {totalPages > 1 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 pt-6 border-t border-border">
+                <div className="text-sm text-muted-foreground order-2 sm:order-1">
+                  Afișând {(page - 1) * itemsPerPage + 1} - {Math.min(page * itemsPerPage, filteredRoutes.length)} din {filteredRoutes.length}
+                </div>
+                
+                <div className="flex items-center gap-2 order-1 sm:order-2">
+                  {/* Previous */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => goToPage(page - 1)}
+                    disabled={page <= 1}
+                    className="gap-1 rounded-lg"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    <span className="hidden sm:inline">Anterior</span>
+                  </Button>
+                  
+                  {/* Page numbers */}
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum: number
+                      if (totalPages <= 5) {
+                        pageNum = i + 1
+                      } else if (page <= 3) {
+                        pageNum = i + 1
+                      } else if (page >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i
+                      } else {
+                        pageNum = page - 2 + i
+                      }
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={page === pageNum ? 'default' : 'ghost'}
+                          size="sm"
+                          className="w-9 h-9 p-0 rounded-lg"
+                          onClick={() => goToPage(pageNum)}
+                        >
+                          {pageNum}
+                        </Button>
+                      )
+                    })}
+                  </div>
+                  
+                  {/* Next */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => goToPage(page + 1)}
+                    disabled={page >= totalPages}
+                    className="gap-1 rounded-lg"
+                  >
+                    <span className="hidden sm:inline">Următor</span>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>

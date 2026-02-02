@@ -74,7 +74,8 @@ export default async function AccountPage({ params, searchParams }: Props) {
         destination,
         depart_at,
         price_cents,
-        currency
+        currency,
+        capacity_total
       ),
       tickets (
         seat_no

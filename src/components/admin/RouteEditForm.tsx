@@ -188,23 +188,12 @@ export default function RouteEditForm({ locale, route }: Props) {
               />
             </div>
           </div>
+          <input type="hidden" name="capacity_total" value="51" />
+          <input type="hidden" name="reserve_offline" value="4" />
+          <div className="rounded-lg border border-border/60 bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+            Autocar: 51 locuri (4 rezervate offline – primul rând). Nu se editează.
+          </div>
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="reserve_offline">Reserve Offline</Label>
-              <Input
-                id="reserve_offline"
-                name="reserve_offline"
-                type="number"
-                min="0"
-                max={route.capacity_total - 1}
-                defaultValue={route.reserve_offline}
-                disabled={loading}
-              />
-              <p className="text-xs text-muted-foreground">
-                Changing this will rebalance unassigned seats between online and
-                offline pools
-              </p>
-            </div>
             <div className="space-y-2">
               <Label htmlFor="status">Status *</Label>
               <select

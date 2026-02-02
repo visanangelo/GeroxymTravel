@@ -6,6 +6,7 @@ import { Sheet, SheetContent, SheetFooter, SheetTitle } from '@/components/ui/sh
 import { Button } from '@/components/ui/button'
 import { formatCurrency } from '@/lib/utils'
 import { copyToClipboardCrossBrowser } from '@/lib/copyToClipboard'
+import { getSeatLabel } from '@/lib/bus-layout'
 import {
   Calendar,
   Ticket,
@@ -82,9 +83,10 @@ export default function BookingDetailSheet({ order, locale, open, onClose }: Pro
 
   if (!order) return null
 
-  const route = order.routes
+  const route = order.routes as { capacity_total?: number } | null
   const tickets = (order.tickets || []) as Array<{ seat_no: number }>
   const seatNumbers = tickets.map((t) => t.seat_no).sort((a, b) => a - b)
+  const capacityTotal = route?.capacity_total
   const departDate = route?.depart_at
     ? new Date(route.depart_at).toLocaleString(locale, {
         dateStyle: 'long',
@@ -183,7 +185,7 @@ export default function BookingDetailSheet({ order, locale, open, onClose }: Pro
                       key={seatNo}
                       className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-1.5 font-mono text-sm font-medium text-foreground"
                     >
-                      {seatNo}
+                      {getSeatLabel(seatNo, capacityTotal)}
                     </span>
                   ))}
                 </div>

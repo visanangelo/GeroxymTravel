@@ -116,10 +116,16 @@ export function AdminSidebar({ locale }: Props) {
   }
 
   const handleLogout = async () => {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    router.push(`/${locale}/login`)
-    router.refresh()
+    try {
+      const supabase = createClient()
+      await supabase.auth.signOut()
+      // Force full page navigation to clear all state
+      window.location.href = `/${locale}/login`
+    } catch (error) {
+      console.error('Logout failed:', error)
+      // Fallback: still redirect
+      window.location.href = `/${locale}/login`
+    }
   }
 
   return (

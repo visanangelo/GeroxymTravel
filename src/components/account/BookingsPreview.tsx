@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { formatCurrency } from '@/lib/utils'
+import { getSeatLabel } from '@/lib/bus-layout'
 import { ArrowRight, MapPin, Calendar, Ticket } from 'lucide-react'
 import type { OrderWithDetails } from './AccountClient'
 
@@ -102,7 +103,7 @@ export default function BookingsPreview({ bookings, locale, onViewAll, onBooking
                     {seatNumbers.length > 0 && (
                       <div className="flex items-center gap-1.5 ml-6 text-xs text-muted-foreground">
                         <Ticket className="h-3 w-3 shrink-0" />
-                        Seats: {seatNumbers.join(', ')}
+                        Locuri: {seatNumbers.map((n) => getSeatLabel(n)).join(', ')}
                       </div>
                     )}
                   </div>

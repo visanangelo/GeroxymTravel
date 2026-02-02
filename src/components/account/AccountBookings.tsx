@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { formatCurrency } from '@/lib/utils'
+import { getSeatLabel } from '@/lib/bus-layout'
 import { MapPin, Calendar, Ticket, ArrowRight, Clock } from 'lucide-react'
 
 type Props = {
@@ -26,7 +27,8 @@ export default async function AccountBookings({ locale, userId }: Props) {
         destination,
         depart_at,
         price_cents,
-        currency
+        currency,
+        capacity_total
       ),
       tickets (
         seat_no
@@ -77,6 +79,7 @@ export default async function AccountBookings({ locale, userId }: Props) {
               const route = order.routes
               const tickets = (order.tickets || []) as Array<{ seat_no: number }>
               const seatNumbers = tickets.map((t) => t.seat_no).sort((a, b) => a - b)
+              const capacityTotal = route?.capacity_total
 
               return (
                 <Card
@@ -160,7 +163,7 @@ export default async function AccountBookings({ locale, userId }: Props) {
                                 variant="outline"
                                 className="font-semibold bg-primary/10 border-primary/20"
                               >
-                                Seat {seatNo}
+                                {getSeatLabel(seatNo, capacityTotal)}
                               </Badge>
                             ))}
                           </div>

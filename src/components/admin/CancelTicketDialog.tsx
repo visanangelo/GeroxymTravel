@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button'
 import { Loader2, AlertTriangle } from 'lucide-react'
 import { cancelTicket } from '@/lib/admin/tickets-actions'
 import { useRouter } from 'next/navigation'
+import { getSeatLabel } from '@/lib/bus-layout'
 
 type Props = {
   open: boolean
@@ -83,8 +84,8 @@ export default function CancelTicketDialog({
                 <span className="font-semibold text-foreground">{customerName}</span>
               </div>
               <div className="flex justify-between items-center py-1.5">
-                <span className="text-muted-foreground">Seat Number</span>
-                <span className="font-semibold text-foreground">Seat {seatNo}</span>
+                <span className="text-muted-foreground">Loc</span>
+                <span className="font-semibold text-foreground">{getSeatLabel(seatNo)}</span>
               </div>
             </div>
           </div>

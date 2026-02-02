@@ -12,6 +12,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { formatCurrency } from '@/lib/utils'
+import { getSeatLabel } from '@/lib/bus-layout'
 import {
   Table,
   TableBody,
@@ -337,7 +338,7 @@ export default async function RouteDetailsPage({ params }: Props) {
                       <TableRow key={`${ticket.order_id}-${ticket.seat_no}`} className="hover:bg-muted/50 transition-colors">
                         <TableCell className="font-medium">
                           <Badge variant="outline" className="font-semibold">
-                            {ticket.seat_no}
+                            {getSeatLabel(ticket.seat_no, route.capacity_total)}
                           </Badge>
                         </TableCell>
                         <TableCell className="font-mono text-xs">

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef, useTransition, memo } from 'react'
+import { useState, useCallback, useRef, useTransition, memo, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Table,
@@ -13,11 +13,12 @@ import {
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { ImageOff } from 'lucide-react'
+import { ImageOff, ChevronLeft, ChevronRight } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import RoutesFilters, { type AdminFiltersState } from '@/components/admin/RoutesFilters'
 import { RouteActionsMenu } from '@/components/admin/RouteActionsMenu'
 import { getAdminRoutes } from './actions'
+import type { OccupiedPositionRow } from '@/lib/admin/routes-actions'
 import { useDebounce } from '@/hooks/use-debounce'
 import { Database } from '@/lib/supabase/database.types'
 
@@ -30,7 +31,13 @@ type Route = Database['public']['Tables']['routes']['Row']
 type Props = {
   initialRoutes: Route[]
   initialCount: number
+  /** Pozițiile ocupate din DB (pentru dropdown corect după create) */
+  initialOccupiedPositions?: OccupiedPositionRow[]
 }
+
+/** Cache pentru paginile prefetch-uite - face navigarea instant */
+type PageCache = Map<number, { routes: Route[]; count: number; timestamp: number }>
+const CACHE_TTL_MS = 30_000 // 30 secunde
 
 const defaultFilters: AdminFiltersState = {
   origin: '',
@@ -41,12 +48,25 @@ const defaultFilters: AdminFiltersState = {
   sort: 'depart_at_desc',
 }
 
+/** Info despre pozițiile ocupate pe homepage */
+type OccupiedPosition = {
+  position: number
+  routeId: string
+  routeName: string
+}
+
 const AdminRouteRow = memo(function AdminRouteRow({
   route,
   onActionSuccess,
+  onPositionChange,
+  occupiedPositions,
 }: {
   route: Route
   onActionSuccess?: () => void
+  /** Optimistic update pentru poziție (instant UI update) */
+  onPositionChange?: (routeId: string, newPosition: number | null) => void
+  /** Lista pozițiilor ocupate pentru dropdown */
+  occupiedPositions: OccupiedPosition[]
 }) {
   const router = useRouter()
   return (
@@ -111,13 +131,18 @@ const AdminRouteRow = memo(function AdminRouteRow({
         </span>
       </TableCell>
       <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-        <RouteActionsMenu route={route} onActionSuccess={onActionSuccess} />
+        <RouteActionsMenu 
+          route={route} 
+          onActionSuccess={onActionSuccess}
+          onPositionChange={onPositionChange}
+          occupiedPositions={occupiedPositions}
+        />
       </TableCell>
     </TableRow>
   )
 })
 
-export default function AdminRoutesListClient({ initialRoutes, initialCount }: Props) {
+export default function AdminRoutesListClient({ initialRoutes, initialCount, initialOccupiedPositions = [] }: Props) {
   const [routes, setRoutes] = useState<Route[]>(initialRoutes)
   const [count, setCount] = useState(initialCount)
   const [filters, setFilters] = useState<AdminFiltersState>(defaultFilters)
@@ -126,9 +151,71 @@ export default function AdminRoutesListClient({ initialRoutes, initialCount }: P
   const isFirstMount = useRef(true)
   const requestIdRef = useRef(0)
   const [isPending, startTransition] = useTransition()
+  
+  // Cache pentru paginile prefetch-uite
+  const pageCacheRef = useRef<PageCache>(new Map())
+  const filtersKeyRef = useRef<string>('')
+
+  // Generează cheie unică pentru filtrele curente
+  const getFiltersKey = useCallback((f: AdminFiltersState) => {
+    return JSON.stringify([f.origin, f.destination, f.status, f.dateFrom, f.dateTo, f.sort])
+  }, [])
+
+  // Prefetch o pagină în background (fără UI update)
+  const prefetchPage = useCallback((f: AdminFiltersState, p: number) => {
+    const currentFilterKey = getFiltersKey(f)
+    const cache = pageCacheRef.current
+    const cached = cache.get(p)
+    
+    // Skip dacă e deja în cache și valid (și filtrele sunt aceleași)
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS && filtersKeyRef.current === currentFilterKey) return
+    
+    getAdminRoutes({
+      origin: f.origin.trim() || undefined,
+      destination: f.destination.trim() || undefined,
+      status: f.status !== 'all' ? f.status : undefined,
+      dateFrom: f.dateFrom || undefined,
+      dateTo: f.dateTo || undefined,
+      sort: f.sort,
+      page: p,
+      requestId: `prefetch-${p}`,
+    }).then((result) => {
+      // Salvează în cache doar dacă filtrele sunt încă aceleași
+      if (!result.error && filtersKeyRef.current === currentFilterKey) {
+        cache.set(p, { routes: result.routes, count: result.count, timestamp: Date.now() })
+      }
+    })
+  }, [getFiltersKey])
+
+  // Prefetch paginile adiacente când se schimbă pagina
+  useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil(count / ITEMS_PER_PAGE))
+    
+    // Prefetch pagina următoare
+    if (page < totalPages) {
+      prefetchPage(filters, page + 1)
+    }
+    // Prefetch pagina anterioară
+    if (page > 1) {
+      prefetchPage(filters, page - 1)
+    }
+  }, [page, count, filters, prefetchPage])
 
   const fetchFiltered = useCallback(
-    (f: AdminFiltersState, p: number) => {
+    (f: AdminFiltersState, p: number, forceRefresh = false) => {
+      const currentFilterKey = getFiltersKey(f)
+      const cache = pageCacheRef.current
+      const cached = cache.get(p)
+      
+      // Check cache pentru navigare instant (doar dacă filtrele sunt aceleași)
+      if (!forceRefresh && cached && Date.now() - cached.timestamp < CACHE_TTL_MS && filtersKeyRef.current === currentFilterKey) {
+        // INSTANT: folosim datele din cache
+        setRoutes(cached.routes)
+        setCount(cached.count)
+        setError(null)
+        return
+      }
+      
       requestIdRef.current += 1
       const id = requestIdRef.current
       startTransition(() => {
@@ -150,19 +237,32 @@ export default function AdminRoutesListClient({ initialRoutes, initialCount }: P
           setError(null)
           setRoutes(result.routes)
           setCount(result.count)
+          // Cache rezultatul doar dacă filtrele sunt încă aceleași
+          if (filtersKeyRef.current === currentFilterKey) {
+            cache.set(p, { routes: result.routes, count: result.count, timestamp: Date.now() })
+          }
         })
       })
     },
-    [startTransition]
+    [startTransition, getFiltersKey]
   )
 
+  // Când se schimbă filtrele: invalidează cache, reset la pagina 1, fetch nou
   useDebounce(
     () => {
       if (isFirstMount.current) {
         isFirstMount.current = false
         return
       }
-      fetchFiltered(filters, page)
+      // Invalidează cache-ul când se schimbă filtrele
+      const newKey = getFiltersKey(filters)
+      if (filtersKeyRef.current !== newKey) {
+        filtersKeyRef.current = newKey
+        pageCacheRef.current.clear()
+      }
+      // Reset la pagina 1 și fetch
+      setPage(1)
+      fetchFiltered(filters, 1, true) // forceRefresh = true pentru a ignora cache
     },
     DEBOUNCE_MS,
     [filters.origin, filters.destination, filters.status, filters.dateFrom, filters.dateTo, filters.sort]
@@ -170,24 +270,93 @@ export default function AdminRoutesListClient({ initialRoutes, initialCount }: P
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    pageCacheRef.current.clear()
+    filtersKeyRef.current = getFiltersKey(filters)
     setPage(1)
-    fetchFiltered(filters, 1)
+    fetchFiltered(filters, 1, true)
   }
 
   const handleClear = () => {
+    pageCacheRef.current.clear()
+    filtersKeyRef.current = getFiltersKey(defaultFilters)
     setFilters(defaultFilters)
     setPage(1)
-    fetchFiltered(defaultFilters, 1)
+    fetchFiltered(defaultFilters, 1, true)
   }
 
-  const goToPage = (newPage: number) => {
+  const goToPage = useCallback((newPage: number) => {
     setPage(newPage)
     fetchFiltered(filters, newPage)
-  }
+  }, [filters, fetchFiltered])
 
   const refetchList = useCallback(() => {
-    fetchFiltered(filters, page)
+    // Force refresh pentru a ignora cache
+    pageCacheRef.current.clear()
+    fetchFiltered(filters, page, true)
   }, [fetchFiltered, filters, page])
+
+  /** Optimistic update pentru poziția pe homepage - instant, fără refetch
+   *  Include și swap-ul cu ruta care ocupa poziția (dacă există)
+   */
+  const handlePositionChange = useCallback((routeId: string, newPosition: number | null) => {
+    setRoutes(prev => {
+      const currentRoute = prev.find(r => r.id === routeId)
+      const oldPosition = currentRoute?.homepage_position != null ? Number(currentRoute.homepage_position) : null
+      
+      return prev.map(r => {
+        if (r.id === routeId) {
+          return { ...r, homepage_position: newPosition }
+        }
+        const rPos = r.homepage_position != null ? Number(r.homepage_position) : null
+        if (newPosition !== null && rPos === newPosition) {
+          return { ...r, homepage_position: oldPosition }
+        }
+        return r
+      })
+    })
+    // Invalidează cache-ul pentru că datele s-au schimbat
+    pageCacheRef.current.clear()
+  }, [])
+
+  /** Pozițiile ocupate: server (toate) + override cu routes curentă pagină (optimistic) */
+  const occupiedPositions = useMemo<OccupiedPosition[]>(() => {
+    const fromRoutes = routes
+      .filter(r => r.homepage_position != null)
+      .map(r => ({
+        position: Number(r.homepage_position) as number,
+        routeId: r.id,
+        routeName: `${r.origin} → ${r.destination}`,
+      }))
+    const byPosition = new Map<number, OccupiedPosition>()
+    for (const o of initialOccupiedPositions) {
+      byPosition.set(Number(o.position), { ...o, position: Number(o.position) })
+    }
+    for (const o of fromRoutes) {
+      byPosition.set(o.position, o)
+    }
+    return Array.from(byPosition.values())
+  }, [routes, initialOccupiedPositions])
+
+  // Keyboard shortcuts pentru navigare rapidă (← →)
+  useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil(count / ITEMS_PER_PAGE))
+    
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Nu intercepta dacă user-ul e într-un input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+      
+      if (e.key === 'ArrowLeft' && page > 1) {
+        e.preventDefault()
+        goToPage(page - 1)
+      } else if (e.key === 'ArrowRight' && page < totalPages) {
+        e.preventDefault()
+        goToPage(page + 1)
+      }
+    }
+    
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [page, count, goToPage])
 
   const hasActiveFilters =
     filters.origin !== '' ||
@@ -257,6 +426,8 @@ export default function AdminRoutesListClient({ initialRoutes, initialCount }: P
                           key={route.id}
                           route={route}
                           onActionSuccess={refetchList}
+                          onPositionChange={handlePositionChange}
+                          occupiedPositions={occupiedPositions}
                         />
                       ))}
                     </TableBody>
@@ -268,17 +439,56 @@ export default function AdminRoutesListClient({ initialRoutes, initialCount }: P
                     <div className="text-sm text-muted-foreground">
                       Showing {from + 1} to {to} of {count} routes
                     </div>
-                    <div className="flex gap-2">
-                      {page > 1 && (
-                        <Button variant="outline" size="sm" onClick={() => goToPage(page - 1)} disabled={isPending}>
-                          Previous
-                        </Button>
-                      )}
-                      {page < totalPages && (
-                        <Button variant="outline" size="sm" onClick={() => goToPage(page + 1)} disabled={isPending}>
-                          Next
-                        </Button>
-                      )}
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => goToPage(page - 1)}
+                        disabled={page <= 1}
+                        className="gap-1"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                        Previous
+                      </Button>
+                      
+                      {/* Page numbers pentru navigare rapidă */}
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                          let pageNum: number
+                          if (totalPages <= 5) {
+                            pageNum = i + 1
+                          } else if (page <= 3) {
+                            pageNum = i + 1
+                          } else if (page >= totalPages - 2) {
+                            pageNum = totalPages - 4 + i
+                          } else {
+                            pageNum = page - 2 + i
+                          }
+                          return (
+                            <Button
+                              key={pageNum}
+                              variant={page === pageNum ? 'default' : 'ghost'}
+                              size="sm"
+                              className="w-8 h-8 p-0"
+                              onClick={() => goToPage(pageNum)}
+                              onMouseEnter={() => prefetchPage(filters, pageNum)}
+                            >
+                              {pageNum}
+                            </Button>
+                          )
+                        })}
+                      </div>
+                      
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => goToPage(page + 1)}
+                        disabled={page >= totalPages}
+                        className="gap-1"
+                      >
+                        Next
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
                 )}

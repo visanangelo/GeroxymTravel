@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { formatCurrency } from '@/lib/utils'
+import { getSeatLabel } from '@/lib/bus-layout'
 import { CheckoutSuccessProcessing } from '@/components/checkout/CheckoutSuccessProcessing'
 import { CheckCircle2, Mail, UserPlus, MapPin, Calendar, Ticket } from 'lucide-react'
 import CreateAccountCTA from '@/components/checkout/CreateAccountCTA'
@@ -40,7 +41,8 @@ export default async function CheckoutSuccessPage({ params, searchParams }: Prop
         destination,
         depart_at,
         price_cents,
-        currency
+        currency,
+        capacity_total
       ),
       customers (
         id,
@@ -162,7 +164,7 @@ export default async function CheckoutSuccessPage({ params, searchParams }: Prop
               <CardContent className="space-y-4">
                 <div>
                   <div className="text-sm text-muted-foreground mb-2">
-                    Allocated Seat Numbers ({seatNumbers.length})
+                    Locuri alocate ({seatNumbers.length})
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {seatNumbers.map((seatNo) => (
@@ -170,7 +172,7 @@ export default async function CheckoutSuccessPage({ params, searchParams }: Prop
                         key={seatNo}
                         className="px-4 py-2 bg-primary/10 border border-primary/20 rounded-lg font-semibold text-primary"
                       >
-                        Seat {seatNo}
+                        {getSeatLabel(seatNo, route?.capacity_total)}
                       </div>
                     ))}
                   </div>

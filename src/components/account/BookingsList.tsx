@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { formatCurrency } from '@/lib/utils'
+import { getSeatLabel } from '@/lib/bus-layout'
 import { MapPin, Calendar, Ticket, ArrowRight } from 'lucide-react'
 import type { OrderWithDetails } from './AccountClient'
 
@@ -126,9 +127,11 @@ export default function BookingsList({ orders, locale, onBookingClick }: Props) 
                   {seatNumbers.length > 0 && (
                     <div className="col-span-2">
                       <div className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Ticket className="h-3 w-3" /> Seats
+                        <Ticket className="h-3 w-3" /> Locuri
                       </div>
-                      <div className="text-sm">{seatNumbers.join(', ')}</div>
+                      <div className="text-sm">
+                        {seatNumbers.map((n) => getSeatLabel(n, (order.routes as { capacity_total?: number })?.capacity_total)).join(', ')}
+                      </div>
                     </div>
                   )}
                 </div>

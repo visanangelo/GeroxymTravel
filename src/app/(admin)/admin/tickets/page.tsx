@@ -13,6 +13,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import TicketActionsCell from '@/components/admin/TicketActionsCell'
+import { getSeatLabel } from '@/lib/bus-layout'
 import { Database } from '@/lib/supabase/database.types'
 
 type Ticket = Database['public']['Tables']['tickets']['Row'] & {
@@ -45,7 +46,8 @@ const getTickets = cache(async (routeId: string | undefined, from: number, to: n
       routes (
         origin,
         destination,
-        depart_at
+        depart_at,
+        capacity_total
       ),
       orders (
         id,
@@ -171,7 +173,7 @@ export default async function TicketsListPage({ params, searchParams }: Props) {
                           className="hover:underline"
                         >
                           <Badge variant="outline" className="font-semibold cursor-pointer hover:bg-accent">
-                            {ticket.seat_no}
+                            {getSeatLabel(ticket.seat_no, route?.capacity_total)}
                           </Badge>
                         </Link>
                       </TableCell>

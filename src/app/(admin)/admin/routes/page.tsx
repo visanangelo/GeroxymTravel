@@ -1,13 +1,16 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
-import { getAdminRoutes } from './actions'
+import { getAdminRoutes, getOccupiedHomepagePositions } from './actions'
 import AdminRoutesListClient from './AdminRoutesListClient'
 
-export const revalidate = 30
+export const dynamic = 'force-dynamic'
 
 export default async function AdminRoutesPage() {
-  const { routes: initialRoutes, count: initialCount, error } = await getAdminRoutes({})
+  const [{ routes: initialRoutes, count: initialCount, error }, initialOccupiedPositions] = await Promise.all([
+    getAdminRoutes({}),
+    getOccupiedHomepagePositions(),
+  ])
 
   if (error) {
     return (
@@ -39,6 +42,7 @@ export default async function AdminRoutesPage() {
       <AdminRoutesListClient
         initialRoutes={initialRoutes}
         initialCount={initialCount}
+        initialOccupiedPositions={initialOccupiedPositions}
       />
     </div>
   )

@@ -146,31 +146,10 @@ export default function RouteForm({ locale }: Props) {
               disabled={loading}
             />
           </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="capacity_total">Total Capacity *</Label>
-              <Input
-                id="capacity_total"
-                name="capacity_total"
-                type="number"
-                min="1"
-                placeholder="50"
-                required
-                disabled={loading}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="reserve_offline">Reserve Offline (default: 5)</Label>
-              <Input
-                id="reserve_offline"
-                name="reserve_offline"
-                type="number"
-                min="0"
-                defaultValue="5"
-                placeholder="5"
-                disabled={loading}
-              />
-            </div>
+          <input type="hidden" name="capacity_total" value="51" />
+          <input type="hidden" name="reserve_offline" value="4" />
+          <div className="rounded-lg border border-border/60 bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+            Autocar: 51 locuri (4 rezervate offline – primul rând).
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">

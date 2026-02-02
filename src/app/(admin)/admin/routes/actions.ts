@@ -2,6 +2,7 @@
 
 import {
   getAdminRoutes,
+  getOccupiedHomepagePositions,
   createRoute as createRouteShared,
   updateRoute as updateRouteShared,
   rebalanceSeats,
@@ -10,9 +11,9 @@ import {
   deleteRoute as deleteRouteShared,
 } from '@/lib/admin/routes-actions'
 
-export type { AdminRoutesResult } from '@/lib/admin/routes-actions'
+export type { AdminRoutesResult, OccupiedPositionRow } from '@/lib/admin/routes-actions'
 
-export { getAdminRoutes, rebalanceSeats }
+export { getAdminRoutes, getOccupiedHomepagePositions, rebalanceSeats }
 
 export async function createRoute(formData: FormData, _locale: string) {
   return createRouteShared(formData, undefined)

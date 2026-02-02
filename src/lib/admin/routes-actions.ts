@@ -70,6 +70,33 @@ async function fetchAdminRoutesUncached(filters: {
   return { routes: (routes ?? []) as AdminRouteRow[], count: count ?? 0, error: null }
 }
 
+export type OccupiedPositionRow = {
+  position: number
+  routeId: string
+  routeName: string
+}
+
+/** Fetch all homepage positions occupied (pentru dropdown "Modifică poziția") */
+export async function getOccupiedHomepagePositions(): Promise<OccupiedPositionRow[]> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
+
+  const service = createServiceClient()
+  const { data } = await service
+    .from('routes')
+    .select('id, origin, destination, homepage_position')
+    .not('homepage_position', 'is', null)
+
+  if (!data) return []
+  return (data as { id: string; origin: string; destination: string; homepage_position: number }[])
+    .map((r) => ({
+      position: Number(r.homepage_position),
+      routeId: r.id,
+      routeName: `${r.origin} → ${r.destination}`,
+    }))
+}
+
 /** Fetch admin routes with filters + pagination. Cached 10s. Auth checked outside cache. */
 export async function getAdminRoutes(filters: {
   origin?: string

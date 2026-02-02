@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import {
@@ -34,21 +35,34 @@ type Route = {
   homepage_position?: number | null
 }
 
+/** Info despre pozițiile ocupate pe homepage */
+type OccupiedPosition = {
+  position: number
+  routeId: string
+  routeName: string // ex: "București → Constanța"
+}
+
 type Props = {
   route: Route
   /** When set (e.g. [locale]/admin), paths use /[locale]/admin; omit for (admin) */
   locale?: string
   /** Call after cancel/delete success so the list refetches and updates */
   onActionSuccess?: () => void
+  /** Optimistic update pentru poziția pe homepage (instant UI update) */
+  onPositionChange?: (routeId: string, newPosition: number | null) => void
+  /** Lista pozițiilor ocupate pentru a le afișa în dropdown */
+  occupiedPositions?: OccupiedPosition[]
 }
 
-export function RouteActionsMenu({ route, locale, onActionSuccess }: Props) {
+export function RouteActionsMenu({ route, locale, onActionSuccess, onPositionChange, occupiedPositions = [] }: Props) {
+  const router = useRouter()
   const [cancelOpen, setCancelOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [positionLoading, setPositionLoading] = useState(false)
+  const [positionSubmitting, setPositionSubmitting] = useState(false)
   const cancelSubmittingRef = useRef(false)
   const deleteSubmittingRef = useRef(false)
+  const positionSubmittingRef = useRef(false)
 
   const handleCancel = async () => {
     if (cancelSubmittingRef.current) return
@@ -61,6 +75,7 @@ export function RouteActionsMenu({ route, locale, onActionSuccess }: Props) {
         setLoading(false)
         toast.success('Rută anulată', { id: `route-cancelled-${route.id}` })
         onActionSuccess?.()
+        router.refresh()
       } else {
         toast.error(result.error ?? 'Nu s-a putut anula ruta', { id: `route-cancel-error-${route.id}` })
         setLoading(false)
@@ -84,6 +99,7 @@ export function RouteActionsMenu({ route, locale, onActionSuccess }: Props) {
         setLoading(false)
         toast.success('Rută ștearsă', { id: `route-deleted-${route.id}` })
         onActionSuccess?.()
+        router.refresh()
       } else {
         toast.error(result.error ?? 'Nu s-a putut șterge ruta', { id: `route-delete-error-${route.id}` })
         setLoading(false)
@@ -98,20 +114,26 @@ export function RouteActionsMenu({ route, locale, onActionSuccess }: Props) {
 
   const handleSetHomepagePosition = (position: number | null) => async (e: Event) => {
     e.preventDefault()
-    setPositionLoading(true)
+    if (positionSubmittingRef.current) return
+    positionSubmittingRef.current = true
+    setPositionSubmitting(true)
+
+    const oldPosition = route.homepage_position ?? null
+    onPositionChange?.(route.id, position)
+    toast.success(position === null ? 'Scoasă de pe homepage' : `Setată pe poziția ${position}`, { id: `route-homepage-${route.id}` })
+
     try {
       const result = await setRouteHomepagePosition(route.id, position, locale)
-      if (result.success) {
-        setPositionLoading(false)
-        toast.success(position === null ? 'Scoasă de pe homepage' : `Setată pe poziția ${position}`, { id: `route-homepage-${route.id}` })
-        onActionSuccess?.()
-      } else {
+      if (!result.success) {
+        onPositionChange?.(route.id, oldPosition)
         toast.error(result.error ?? 'Nu s-a putut actualiza', { id: `route-homepage-error-${route.id}` })
-        setPositionLoading(false)
       }
     } catch (err) {
+      onPositionChange?.(route.id, oldPosition)
       toast.error(err instanceof Error ? err.message : 'Nu s-a putut actualiza', { id: `route-homepage-error-${route.id}` })
-      setPositionLoading(false)
+    } finally {
+      positionSubmittingRef.current = false
+      setPositionSubmitting(false)
     }
   }
 
@@ -157,24 +179,39 @@ export function RouteActionsMenu({ route, locale, onActionSuccess }: Props) {
                 <span className="ml-1 text-muted-foreground">({route.homepage_position})</span>
               )}
             </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent className="w-48">
-              {HOMEPAGE_POSITIONS.map((pos) => (
-                <DropdownMenuItem
-                  key={pos}
-                  onSelect={handleSetHomepagePosition(pos)}
-                  disabled={positionLoading}
-                >
-                  <span className={route.homepage_position === pos ? 'font-semibold text-primary' : ''}>
-                    Poziția {pos}
-                    {route.homepage_position === pos ? ' ✓' : ''}
-                  </span>
-                </DropdownMenuItem>
-              ))}
+            <DropdownMenuSubContent className="w-64">
+              {HOMEPAGE_POSITIONS.map((pos) => {
+                const currentPos = route.homepage_position != null ? Number(route.homepage_position) : null
+                const isOccupiedByThisRoute = occupiedPositions.some(o => Number(o.position) === pos && o.routeId === route.id)
+                const isCurrentRoute = currentPos === pos || isOccupiedByThisRoute
+                const occupiedBy = occupiedPositions.find(o => Number(o.position) === pos && o.routeId !== route.id)
+                
+                return (
+                  <DropdownMenuItem
+                    key={pos}
+                    disabled={positionSubmitting}
+                    onSelect={handleSetHomepagePosition(pos)}
+                    className="flex flex-col items-start gap-0.5 py-2"
+                  >
+                    <span className={isCurrentRoute ? 'font-semibold text-primary' : ''}>
+                      Poziția {pos}
+                      {isCurrentRoute && ' ✓'}
+                    </span>
+                    {occupiedBy && (
+                      <span className="text-xs text-muted-foreground truncate max-w-full">
+                        {occupiedBy.routeName}
+                      </span>
+                    )}
+                    {!occupiedBy && !isCurrentRoute && (
+                      <span className="text-xs text-green-600 dark:text-green-400">
+                        Disponibilă
+                      </span>
+                    )}
+                  </DropdownMenuItem>
+                )
+              })}
               <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onSelect={handleSetHomepagePosition(null)}
-                disabled={positionLoading}
-              >
+              <DropdownMenuItem disabled={positionSubmitting} onSelect={handleSetHomepagePosition(null)}>
                 Scoate de pe homepage
               </DropdownMenuItem>
             </DropdownMenuSubContent>
