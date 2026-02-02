@@ -1,6 +1,7 @@
 import type React from "react"
 import type { Metadata } from "next"
 import { Syne, Inter } from "next/font/google"
+import { Analytics } from "@vercel/analytics/next"
 import { ToasterPortal } from "@/components/ToasterPortal"
 import "./globals.css"
 import { Suspense } from "react"
@@ -44,6 +45,7 @@ export default function RootLayout({
       <body className="font-sans antialiased bg-background text-foreground">
         <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
         <ToasterPortal />
+        <Analytics />
       </body>
     </html>
   )
