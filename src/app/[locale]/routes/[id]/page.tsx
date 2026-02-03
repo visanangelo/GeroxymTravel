@@ -269,7 +269,7 @@ export default async function RouteDetailsPage({ params }: Props) {
                       routeId={route.id}
                       priceCents={route.price_cents}
                       currency={route.currency}
-                      maxQuantity={Math.min(onlineRemaining, 10)}
+                      maxQuantity={Math.min(onlineRemaining, route.capacity_online)}
                       customerData={customerData}
                     />
                   ) : (

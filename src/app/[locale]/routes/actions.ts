@@ -181,11 +181,6 @@ export async function createOrderWithGuest(
 ) {
   const supabase = await createClient()
 
-  // Validate quantity
-  if (quantity < 1 || quantity > 10) {
-    throw new Error('Quantity must be between 1 and 10')
-  }
-
   // Validate customer info
   if (!fullName || !email || !phone) {
     throw new Error('All customer information is required')
@@ -226,6 +221,12 @@ export async function createOrderWithGuest(
     (seatNo) => seatNo > reserveOffline
   ).length
   const onlineRemaining = route.capacity_online - onlineSold
+
+  if (quantity < 1 || quantity > route.capacity_online) {
+    throw new Error(
+      `Quantity must be between 1 and ${route.capacity_online} (max bilete online).`
+    )
+  }
 
   if (quantity > onlineRemaining) {
     throw new Error(
@@ -337,12 +338,7 @@ export async function createOrder(
     throw new Error('You must be logged in to create an order')
   }
 
-  // Validate quantity
-  if (quantity < 1 || quantity > 10) {
-    throw new Error('Quantity must be between 1 and 10')
-  }
-
-  // Get route details
+  // Get route details first (need capacity_online for max quantity)
   const { data: route, error: routeError } = await supabase
     .from('routes')
     .select('price_cents, currency, capacity_online, reserve_offline, status')
@@ -371,6 +367,12 @@ export async function createOrder(
     (seatNo) => seatNo > reserveOffline
   ).length
   const onlineRemaining = route.capacity_online - onlineSold
+
+  if (quantity < 1 || quantity > route.capacity_online) {
+    throw new Error(
+      `Quantity must be between 1 and ${route.capacity_online} (max bilete online).`
+    )
+  }
 
   if (quantity > onlineRemaining) {
     throw new Error(
