@@ -291,23 +291,47 @@ export async function createOrderWithGuest(
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Create order with customer_id
-  // Use service client to bypass RLS for guest orders
+  // Un singur order 'created' per client per rută: dacă există deja, îl actualizăm (cantitate, sumă, date)
+  const { data: existingOrder } = await serviceClient
+    .from('orders')
+    .select('id')
+    .eq('route_id', routeId)
+    .eq('customer_id', customerId)
+    .eq('status', 'created')
+    .eq('source', 'online')
+    .maybeSingle()
+
+  if (existingOrder) {
+    const { data: updated, error: updateError } = await serviceClient
+      .from('orders')
+      .update({
+        quantity,
+        amount_cents: amountCents,
+        metadata: { customer_name: fullName, phone },
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', existingOrder.id)
+      .select('id')
+      .single()
+
+    if (updateError) {
+      throw new Error(`Failed to update order: ${updateError.message}`)
+    }
+    return updated.id
+  }
+
   const { data: order, error: orderError } = await serviceClient
     .from('orders')
     .insert({
       route_id: routeId,
       customer_id: customerId,
-      user_id: user?.id || null, // Optional: link to user if logged in
+      user_id: user?.id || null,
       quantity,
       amount_cents: amountCents,
       currency: route.currency,
       status: 'created',
       source: 'online',
-      metadata: {
-        customer_name: fullName,
-        phone: phone,
-      },
+      metadata: { customer_name: fullName, phone },
       stripe_session_id: `temp_${Date.now()}_${Math.random().toString(36).substring(7)}`,
       stripe_payment_intent_id: null,
     })
@@ -421,8 +445,36 @@ export async function createOrder(
     customerId = newCustomer.id
   }
 
-  // Create order with status 'created' and source 'online'
-  const { data: order, error: orderError } = await supabase
+  // Un singur order 'created' per client per rută: dacă există deja, îl actualizăm
+  const serviceClient = createServiceClient()
+  const { data: existingOrder } = await serviceClient
+    .from('orders')
+    .select('id')
+    .eq('route_id', routeId)
+    .eq('customer_id', customerId)
+    .eq('status', 'created')
+    .eq('source', 'online')
+    .maybeSingle()
+
+  if (existingOrder) {
+    const { data: updated, error: updateError } = await serviceClient
+      .from('orders')
+      .update({
+        quantity,
+        amount_cents: amountCents,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', existingOrder.id)
+      .select('id')
+      .single()
+
+    if (updateError) {
+      throw new Error(`Failed to update order: ${updateError.message}`)
+    }
+    return updated.id
+  }
+
+  const { data: order, error: orderError } = await serviceClient
     .from('orders')
     .insert({
       route_id: routeId,

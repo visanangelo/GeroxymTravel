@@ -14,19 +14,49 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { Loader2 } from 'lucide-react'
 
 type Props = {
   locale: string
   initialError?: string
+  /** Optional redirect path after OAuth (e.g. /ro/account). Defaults to account. */
+  redirectTo?: string
 }
 
-export default function LoginForm({ locale, initialError }: Props) {
+export default function LoginForm({ locale, initialError, redirectTo }: Props) {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(initialError || null)
   const [loading, setLoading] = useState(false)
+  const [oauthLoading, setOauthLoading] = useState<'google' | 'facebook' | null>(null)
   const [isSignUp, setIsSignUp] = useState(false)
+
+  const defaultRedirect = `/${locale}/account`
+  const nextPath = redirectTo ?? defaultRedirect
+
+  async function handleOAuthSignIn(provider: 'google' | 'facebook') {
+    setError(null)
+    setOauthLoading(provider)
+    try {
+      const supabase = createClient()
+      const { error: oauthError } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/auth/callback?next=${encodeURIComponent(nextPath)}`,
+        },
+      })
+      if (oauthError) {
+        setError(oauthError.message)
+        setOauthLoading(null)
+        return
+      }
+      // signInWithOAuth redirects to provider; no need to router.push
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Sign in failed')
+      setOauthLoading(null)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -113,6 +143,45 @@ export default function LoginForm({ locale, initialError }: Props) {
               {error}
             </div>
           )}
+
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              disabled={loading || !!oauthLoading}
+              onClick={() => handleOAuthSignIn('google')}
+            >
+              {oauthLoading === 'google' ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                'Google'
+              )}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              disabled={loading || !!oauthLoading}
+              onClick={() => handleOAuthSignIn('facebook')}
+            >
+              {oauthLoading === 'facebook' ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                'Facebook'
+              )}
+            </Button>
+          </div>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-card px-2 text-muted-foreground">sau cu email</span>
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input

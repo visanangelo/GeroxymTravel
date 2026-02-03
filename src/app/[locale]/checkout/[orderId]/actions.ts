@@ -69,6 +69,7 @@ export async function finalizeOrder(orderId: string) {
 /**
  * Create Stripe Checkout Session for an order and return the redirect URL.
  * Updates order.stripe_session_id. Caller should redirect user to the returned url.
+ * Verifies availability before creating session – if seats were sold in the meantime, no redirect to Pay.
  */
 export async function createCheckoutSession(orderId: string, locale: string): Promise<{ url: string }> {
   const validOrderId = parseFinalizeOrderOrderId(orderId)
@@ -76,7 +77,7 @@ export async function createCheckoutSession(orderId: string, locale: string): Pr
 
   const { data: order, error: orderError } = await serviceClient
     .from('orders')
-    .select('id, amount_cents, currency, quantity, status')
+    .select('id, route_id, amount_cents, currency, quantity, status')
     .eq('id', validOrderId)
     .single()
 
@@ -86,6 +87,33 @@ export async function createCheckoutSession(orderId: string, locale: string): Pr
 
   if (order.status !== 'created') {
     throw new Error(`Cannot pay for order with status: ${order.status}`)
+  }
+
+  // Check availability now – don't send to Stripe if seats were sold in the meantime
+  const { data: route } = await serviceClient
+    .from('routes')
+    .select('capacity_online, reserve_offline')
+    .eq('id', order.route_id)
+    .single()
+
+  if (route) {
+    const { data: tickets } = await serviceClient
+      .from('tickets')
+      .select('seat_no')
+      .eq('route_id', order.route_id)
+      .eq('status', 'paid')
+    const assignedSeatNos = new Set((tickets ?? []).map((t: { seat_no: number }) => t.seat_no))
+    const reserveOffline = route.reserve_offline ?? 4
+    const onlineSold = Array.from(assignedSeatNos).filter((seatNo) => seatNo > reserveOffline).length
+    const onlineRemaining = route.capacity_online - onlineSold
+
+    if (order.quantity > onlineRemaining) {
+      throw new Error(
+        onlineRemaining <= 0
+          ? 'Nu mai sunt locuri disponibile pentru această cursă. Comanda nu poate fi plătită.'
+          : `Mai sunt doar ${onlineRemaining} locuri. Comanda ta este pentru ${order.quantity} – nu poți plăti acum. Alege o altă cursă sau cantitate.`
+      )
+    }
   }
 
   const { url, sessionId } = await createCheckoutSessionForOrder(

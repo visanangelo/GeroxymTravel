@@ -9,7 +9,8 @@ type Props = {
 
 export default async function LoginPage({ params, searchParams }: Props) {
   const { locale } = await params
-  const { error: errorParam } = await searchParams
+  const { error: errorParam, redirect: redirectParam } = await searchParams
+  const redirectTo = redirectParam && redirectParam.startsWith('/') ? redirectParam : undefined
 
   // Check if user is already logged in
   const supabase = await createClient()
@@ -35,7 +36,7 @@ export default async function LoginPage({ params, searchParams }: Props) {
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <LoginForm locale={locale} initialError={errorParam} />
+        <LoginForm locale={locale} initialError={errorParam} redirectTo={redirectTo} />
       </div>
     </div>
   )

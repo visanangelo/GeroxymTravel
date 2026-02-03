@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -44,17 +44,29 @@ type OccupiedPosition = {
 
 type Props = {
   route: Route
-  /** When set (e.g. [locale]/admin), paths use /[locale]/admin; omit for (admin) */
   locale?: string
-  /** Call after cancel/delete success so the list refetches and updates */
   onActionSuccess?: () => void
-  /** Optimistic update pentru poziția pe homepage (instant UI update) */
   onPositionChange?: (routeId: string, newPosition: number | null) => void
-  /** Lista pozițiilor ocupate pentru a le afișa în dropdown */
+  onOptimisticCancel?: (route: Route) => void
+  /** Revert la eroare (refetch listă). */
+  onRevertCancel?: () => void
+  /** Optimistic: scoate ruta din listă. La eroare: onRevertDelete() (ex: refetch). */
+  onOptimisticDelete?: (route: Route) => void
+  onRevertDelete?: () => void
   occupiedPositions?: OccupiedPosition[]
 }
 
-export function RouteActionsMenu({ route, locale, onActionSuccess, onPositionChange, occupiedPositions = [] }: Props) {
+export function RouteActionsMenu({
+  route,
+  locale,
+  onActionSuccess,
+  onPositionChange,
+  onOptimisticCancel,
+  onRevertCancel,
+  onOptimisticDelete,
+  onRevertDelete,
+  occupiedPositions = [],
+}: Props) {
   const router = useRouter()
   const [cancelOpen, setCancelOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
@@ -63,27 +75,43 @@ export function RouteActionsMenu({ route, locale, onActionSuccess, onPositionCha
   const cancelSubmittingRef = useRef(false)
   const deleteSubmittingRef = useRef(false)
   const positionSubmittingRef = useRef(false)
+  const isMountedRef = useRef(true)
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
 
   const handleCancel = async () => {
     if (cancelSubmittingRef.current) return
     cancelSubmittingRef.current = true
-    setLoading(true)
+    setCancelOpen(false)
+
+    if (onOptimisticCancel) {
+      onOptimisticCancel(route)
+      toast.success('Rută anulată', { id: `route-cancelled-${route.id}` })
+    } else {
+      setLoading(true)
+    }
+
     try {
       const result = await cancelRoute(route.id, locale)
+      if (!isMountedRef.current) return
       if (result.success) {
-        setCancelOpen(false)
-        setLoading(false)
-        toast.success('Rută anulată', { id: `route-cancelled-${route.id}` })
         onActionSuccess?.()
         router.refresh()
       } else {
+        if (onRevertCancel) onRevertCancel()
         toast.error(result.error ?? 'Nu s-a putut anula ruta', { id: `route-cancel-error-${route.id}` })
-        setLoading(false)
-        cancelSubmittingRef.current = false
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Nu s-a putut anula ruta', { id: `route-cancel-error-${route.id}` })
-      setLoading(false)
+      if (isMountedRef.current) {
+        if (onRevertCancel) onRevertCancel()
+        toast.error(e instanceof Error ? e.message : 'Nu s-a putut anula ruta', { id: `route-cancel-error-${route.id}` })
+      }
+    } finally {
+      if (isMountedRef.current) setLoading(false)
       cancelSubmittingRef.current = false
     }
   }
@@ -91,23 +119,32 @@ export function RouteActionsMenu({ route, locale, onActionSuccess, onPositionCha
   const handleDelete = async () => {
     if (deleteSubmittingRef.current) return
     deleteSubmittingRef.current = true
-    setLoading(true)
+    setDeleteOpen(false)
+
+    if (onOptimisticDelete) {
+      onOptimisticDelete(route)
+      toast.success('Rută ștearsă', { id: `route-deleted-${route.id}` })
+    } else {
+      setLoading(true)
+    }
+
     try {
       const result = await deleteRoute(route.id, locale)
+      if (!isMountedRef.current) return
       if (result.success) {
-        setDeleteOpen(false)
-        setLoading(false)
-        toast.success('Rută ștearsă', { id: `route-deleted-${route.id}` })
         onActionSuccess?.()
         router.refresh()
       } else {
+        if (onRevertDelete) onRevertDelete()
         toast.error(result.error ?? 'Nu s-a putut șterge ruta', { id: `route-delete-error-${route.id}` })
-        setLoading(false)
-        deleteSubmittingRef.current = false
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Nu s-a putut șterge ruta', { id: `route-delete-error-${route.id}` })
-      setLoading(false)
+      if (isMountedRef.current) {
+        if (onRevertDelete) onRevertDelete()
+        toast.error(e instanceof Error ? e.message : 'Nu s-a putut șterge ruta', { id: `route-delete-error-${route.id}` })
+      }
+    } finally {
+      if (isMountedRef.current) setLoading(false)
       deleteSubmittingRef.current = false
     }
   }
@@ -118,22 +155,23 @@ export function RouteActionsMenu({ route, locale, onActionSuccess, onPositionCha
     positionSubmittingRef.current = true
     setPositionSubmitting(true)
 
-    const oldPosition = route.homepage_position ?? null
-    onPositionChange?.(route.id, position)
-    toast.success(position === null ? 'Scoasă de pe homepage' : `Setată pe poziția ${position}`, { id: `route-homepage-${route.id}` })
-
     try {
       const result = await setRouteHomepagePosition(route.id, position, locale)
-      if (!result.success) {
-        onPositionChange?.(route.id, oldPosition)
+      if (!isMountedRef.current) return
+      if (result.success) {
+        onPositionChange?.(route.id, position)
+        router.refresh()
+        toast.success(position === null ? 'Scoasă de pe homepage' : `Setată pe poziția ${position}`, { id: `route-homepage-${route.id}` })
+      } else {
         toast.error(result.error ?? 'Nu s-a putut actualiza', { id: `route-homepage-error-${route.id}` })
       }
     } catch (err) {
-      onPositionChange?.(route.id, oldPosition)
-      toast.error(err instanceof Error ? err.message : 'Nu s-a putut actualiza', { id: `route-homepage-error-${route.id}` })
+      if (isMountedRef.current) {
+        toast.error(err instanceof Error ? err.message : 'Nu s-a putut actualiza', { id: `route-homepage-error-${route.id}` })
+      }
     } finally {
       positionSubmittingRef.current = false
-      setPositionSubmitting(false)
+      if (isMountedRef.current) setPositionSubmitting(false)
     }
   }
 

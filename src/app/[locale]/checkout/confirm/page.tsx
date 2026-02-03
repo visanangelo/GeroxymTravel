@@ -2,6 +2,8 @@ import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import Link from 'next/link'
 import { formatCurrency } from '@/lib/utils'
 import CheckoutConfirmForm from '@/components/checkout/CheckoutConfirmForm'
 import { Calendar, MapPin, Users, DollarSign } from 'lucide-react'
@@ -80,12 +82,7 @@ export default async function CheckoutConfirmPage({ params, searchParams }: Prop
     (seatNo) => seatNo > reserveOffline
   ).length
   const onlineRemaining = route.capacity_online - onlineSold
-
-  if (order.quantity > onlineRemaining) {
-    throw new Error(
-      `Only ${onlineRemaining} seats available. Please select fewer tickets.`
-    )
-  }
+  const noLongerAvailable = order.quantity > onlineRemaining
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
@@ -179,19 +176,39 @@ export default async function CheckoutConfirmPage({ params, searchParams }: Prop
             </Card>
           </div>
 
-          {/* Payment Card */}
-          <Card className="border-primary/20 bg-primary/5">
-            <CardHeader>
-              <CardTitle>Ready to Pay?</CardTitle>
-              <CardDescription>
-                Click the button below to pay securely with your card. You will be redirected to Stripe Checkout.
-                Seats will be assigned after payment.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <CheckoutConfirmForm locale={locale} orderId={orderId} />
-            </CardContent>
-          </Card>
+          {/* Payment Card or "no longer available" */}
+          {noLongerAvailable ? (
+            <Card className="border-destructive/50 bg-destructive/5">
+              <CardHeader>
+                <CardTitle className="text-destructive">Nu mai sunt locuri suficiente</CardTitle>
+                <CardDescription>
+                  {onlineRemaining <= 0
+                    ? 'Toate locurile pentru această cursă au fost vândute. Comanda ta nu poate fi onorată.'
+                    : `Mai sunt doar ${onlineRemaining} locuri. Comanda ta este pentru ${order.quantity} bilete – nu o putem onora.`}
+                  {' '}
+                  Alege o altă cursă sau o altă dată.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button asChild className="w-full" variant="default">
+                  <Link href={`/${locale}/routes`}>Caută alte rute</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="border-primary/20 bg-primary/5">
+              <CardHeader>
+                <CardTitle>Ready to Pay?</CardTitle>
+                <CardDescription>
+                  Click the button below to pay securely with your card. You will be redirected to Stripe Checkout.
+                  Seats will be assigned after payment.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <CheckoutConfirmForm locale={locale} orderId={orderId} />
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>

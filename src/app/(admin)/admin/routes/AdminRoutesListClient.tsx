@@ -59,13 +59,20 @@ const AdminRouteRow = memo(function AdminRouteRow({
   route,
   onActionSuccess,
   onPositionChange,
+  onOptimisticCancel,
+  onRevertCancel,
+  onOptimisticDelete,
+  onRevertDelete,
   occupiedPositions,
 }: {
   route: Route
   onActionSuccess?: () => void
-  /** Optimistic update pentru poziție (instant UI update) */
   onPositionChange?: (routeId: string, newPosition: number | null) => void
-  /** Lista pozițiilor ocupate pentru dropdown */
+  onOptimisticCancel?: (route: Route) => void
+  /** Revert la eroare (refetch listă). */
+  onRevertCancel?: () => void
+  onOptimisticDelete?: (route: Route) => void
+  onRevertDelete?: () => void
   occupiedPositions: OccupiedPosition[]
 }) {
   const router = useRouter()
@@ -135,6 +142,10 @@ const AdminRouteRow = memo(function AdminRouteRow({
           route={route} 
           onActionSuccess={onActionSuccess}
           onPositionChange={onPositionChange}
+          onOptimisticCancel={onOptimisticCancel}
+          onRevertCancel={onRevertCancel}
+          onOptimisticDelete={onOptimisticDelete}
+          onRevertDelete={onRevertDelete}
           occupiedPositions={occupiedPositions}
         />
       </TableCell>
@@ -295,6 +306,25 @@ export default function AdminRoutesListClient({ initialRoutes, initialCount, ini
     fetchFiltered(filters, page, true)
   }, [fetchFiltered, filters, page])
 
+  /** Optimistic cancel: pune status 'cancelled' în listă. La eroare: refetch readuce starea reală. */
+  const handleOptimisticCancel = useCallback((route: Route) => {
+    setRoutes(prev => prev.map(r => r.id === route.id ? { ...r, status: 'cancelled' } : r))
+    pageCacheRef.current.clear()
+  }, [])
+
+  /** Revert la eroare: refetch listă (pentru cancel și delete). */
+  const handleRevert = useCallback(() => {
+    pageCacheRef.current.clear()
+    fetchFiltered(filters, page, true)
+  }, [fetchFiltered, filters, page])
+
+  /** Optimistic delete: scoate ruta din listă și scade count. La eroare: refetch readuce datele. */
+  const handleOptimisticDelete = useCallback((route: Route) => {
+    setRoutes(prev => prev.filter(r => r.id !== route.id))
+    setCount(prev => Math.max(0, prev - 1))
+    pageCacheRef.current.clear()
+  }, [])
+
   /** Optimistic update pentru poziția pe homepage - instant, fără refetch
    *  Include și swap-ul cu ruta care ocupa poziția (dacă există)
    */
@@ -427,6 +457,10 @@ export default function AdminRoutesListClient({ initialRoutes, initialCount, ini
                           route={route}
                           onActionSuccess={refetchList}
                           onPositionChange={handlePositionChange}
+                          onOptimisticCancel={handleOptimisticCancel}
+                          onRevertCancel={handleRevert}
+                          onOptimisticDelete={handleOptimisticDelete}
+                          onRevertDelete={handleRevert}
                           occupiedPositions={occupiedPositions}
                         />
                       ))}
