@@ -38,7 +38,8 @@ export default async function CheckoutConfirmPage({ params, searchParams }: Prop
         depart_at,
         price_cents,
         currency,
-        capacity_online
+        capacity_online,
+        reserve_offline
       ),
       customers (
         id,
@@ -74,8 +75,9 @@ export default async function CheckoutConfirmPage({ params, searchParams }: Prop
     .eq('status', 'paid')
 
   const assignedSeatNos = new Set(tickets?.map((t: { seat_no: number }) => t.seat_no) || [])
+  const reserveOffline = route.reserve_offline ?? 4
   const onlineSold = Array.from(assignedSeatNos).filter(
-    (seatNo) => seatNo <= route.capacity_online
+    (seatNo) => seatNo > reserveOffline
   ).length
   const onlineRemaining = route.capacity_online - onlineSold
 

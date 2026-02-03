@@ -63,12 +63,13 @@ export default async function RouteDetailsPage({ params }: Props) {
 
   const tickets = ticketsResult.data ?? []
   const assignedSeatNos = new Set((tickets as Array<{ seat_no: number }>).map((t) => t.seat_no))
+  const reserveOffline = route.reserve_offline ?? 4
   const onlineSold = Array.from(assignedSeatNos).filter(
-    (seatNo) => seatNo <= route.capacity_online
+    (seatNo) => seatNo > reserveOffline
   ).length
   const onlineRemaining = Math.max(0, route.capacity_online - onlineSold)
   const offlineReserved = Array.from(assignedSeatNos).filter(
-    (seatNo) => seatNo > route.capacity_online
+    (seatNo) => seatNo <= reserveOffline
   ).length
 
   // Get current user and customer data if logged in

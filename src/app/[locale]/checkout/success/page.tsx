@@ -1,6 +1,8 @@
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
+import { getCheckoutSession } from '@/lib/stripe/server'
+import { finalizeOrderLogic } from '@/lib/checkout/finalize-order-logic'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
@@ -14,23 +16,21 @@ export const dynamic = 'force-dynamic'
 
 type Props = {
   params: Promise<{ locale: string }>
-  searchParams: Promise<{ orderId?: string }>
+  searchParams: Promise<{ orderId?: string; session_id?: string }>
 }
 
 export default async function CheckoutSuccessPage({ params, searchParams }: Props) {
   const { locale } = await params
-  const { orderId } = await searchParams
+  const { orderId, session_id: sessionId } = await searchParams
 
   if (!orderId) {
     redirect(`/${locale}/routes`)
   }
 
   const supabase = await createClient()
-  
-  // Use service client to read order (bypasses RLS for guest orders)
   const serviceClient = createServiceClient()
 
-  // Fetch order with route and customer (without nested tickets to avoid RLS issues)
+  // Fetch order with route and customer
   const { data: order, error: orderError } = await serviceClient
     .from('orders')
     .select(`
@@ -59,8 +59,20 @@ export default async function CheckoutSuccessPage({ params, searchParams }: Prop
     notFound()
   }
 
-  // If still 'created', webhook may be delayed – show processing state and refresh
+  // Order still 'created': either webhook delayed or user came from Stripe success.
+  // If we have session_id, verify payment with Stripe and finalize here (fallback when webhook didn't run).
   if (order.status === 'created') {
+    if (sessionId) {
+      const session = await getCheckoutSession(sessionId)
+      if (session?.payment_status === 'paid' && session.metadata?.order_id === orderId) {
+        try {
+          await finalizeOrderLogic(orderId)
+          redirect(`/${locale}/checkout/success?orderId=${orderId}`)
+        } catch {
+          // e.g. allocate_tickets failed (no seats) – show processing and let user retry/contact
+        }
+      }
+    }
     return <CheckoutSuccessProcessing locale={locale} />
   }
 

@@ -64,3 +64,23 @@ export async function createCheckoutSessionForOrder(
 
   return { url: session.url, sessionId: session.id }
 }
+
+/**
+ * Retrieve a Checkout Session to verify payment status (e.g. on success page when webhook is delayed).
+ */
+export async function getCheckoutSession(
+  sessionId: string
+): Promise<{ payment_status: string; metadata?: { order_id?: string } } | null> {
+  try {
+    const stripe = getStripe()
+    const session = await stripe.checkout.sessions.retrieve(sessionId, {
+      expand: [],
+    })
+    return {
+      payment_status: session.payment_status ?? 'unpaid',
+      metadata: session.metadata ? { order_id: session.metadata.order_id } : undefined,
+    }
+  } catch {
+    return null
+  }
+}

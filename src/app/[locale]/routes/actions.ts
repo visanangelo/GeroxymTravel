@@ -61,7 +61,7 @@ async function fetchFilteredRoutesUncached(filters: {
 
   let query = serviceClient
     .from('routes')
-    .select('id, origin, destination, depart_at, price_cents, currency, capacity_online, capacity_total, status, image_url, route_category, route_subcategory')
+    .select('id, origin, destination, depart_at, price_cents, currency, capacity_online, capacity_total, reserve_offline, status, image_url, route_category, route_subcategory')
     .eq('status', 'active')
     .gte('depart_at', new Date().toISOString())
     .limit(limit)
@@ -123,9 +123,11 @@ async function fetchFilteredRoutesUncached(filters: {
     ticketsByRoute.get(ticket.route_id)!.add(ticket.seat_no)
   })
 
+  const reserveOfflineDefault = 4
   const routesWithData: RouteWithAvailability[] = (routes ?? []).map((route: Record<string, unknown>) => {
     const assignedSeatNos = ticketsByRoute.get(route.id as string) ?? new Set<number>()
-    const onlineSold = Array.from(assignedSeatNos).filter((seatNo) => seatNo <= (route.capacity_online as number)).length
+    const reserveOffline = (route.reserve_offline as number | undefined) ?? reserveOfflineDefault
+    const onlineSold = Array.from(assignedSeatNos).filter((seatNo) => seatNo > reserveOffline).length
     const onlineRemaining = Math.max(0, (route.capacity_online as number) - onlineSold)
     return {
       ...route,
@@ -198,7 +200,7 @@ export async function createOrderWithGuest(
   // Get route details
   const { data: route, error: routeError } = await supabase
     .from('routes')
-    .select('price_cents, currency, capacity_online, status')
+    .select('price_cents, currency, capacity_online, reserve_offline, status')
     .eq('id', routeId)
     .single()
 
@@ -210,8 +212,7 @@ export async function createOrderWithGuest(
     throw new Error('Route is not available for booking')
   }
 
-  // Check availability
-  // Use service client to read tickets (bypasses RLS for public availability info)
+  // Check availability (online = seat_no > reserve_offline, matches allocate_tickets pool=online)
   const serviceClientForTickets = createServiceClient()
   const { data: tickets } = await serviceClientForTickets
     .from('tickets')
@@ -220,8 +221,9 @@ export async function createOrderWithGuest(
     .eq('status', 'paid')
 
   const assignedSeatNos = new Set(tickets?.map((t) => t.seat_no) || [])
+  const reserveOffline = route.reserve_offline ?? 4
   const onlineSold = Array.from(assignedSeatNos).filter(
-    (seatNo) => seatNo <= route.capacity_online
+    (seatNo) => seatNo > reserveOffline
   ).length
   const onlineRemaining = route.capacity_online - onlineSold
 
@@ -343,7 +345,7 @@ export async function createOrder(
   // Get route details
   const { data: route, error: routeError } = await supabase
     .from('routes')
-    .select('price_cents, currency, capacity_online, status')
+    .select('price_cents, currency, capacity_online, reserve_offline, status')
     .eq('id', routeId)
     .single()
 
@@ -355,8 +357,7 @@ export async function createOrder(
     throw new Error('Route is not available for booking')
   }
 
-  // Check availability
-  // Use service client to read tickets (bypasses RLS for public availability info)
+  // Check availability (online = seat_no > reserve_offline)
   const serviceClientForTickets = createServiceClient()
   const { data: tickets } = await serviceClientForTickets
     .from('tickets')
@@ -365,8 +366,9 @@ export async function createOrder(
     .eq('status', 'paid')
 
   const assignedSeatNos = new Set(tickets?.map((t) => t.seat_no) || [])
+  const reserveOffline = route.reserve_offline ?? 4
   const onlineSold = Array.from(assignedSeatNos).filter(
-    (seatNo) => seatNo <= route.capacity_online
+    (seatNo) => seatNo > reserveOffline
   ).length
   const onlineRemaining = route.capacity_online - onlineSold
 
