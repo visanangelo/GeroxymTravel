@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
@@ -191,12 +190,20 @@ export default function LoginForm({ locale, initialError, redirectTo, confirmEma
           <div className="rounded-md bg-green-500/10 p-4 text-sm text-green-700 dark:text-green-400">
             Account created. Please check your email (and spam folder), click the confirmation link, then sign in.
           </div>
-          <Link
-            href={`/${locale}/login`}
+          <Button
+            type="button"
             className="inline-flex w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            onClick={() => {
+              // Switch back to login view on the same page
+              setSignUpNeedsConfirmation(false)
+              setIsSignUp(false)
+              setError(null)
+              setEmailNotConfirmed(false)
+              setResendSent(false)
+            }}
           >
             Go to Sign in
-          </Link>
+          </Button>
         </CardContent>
       </Card>
     )
