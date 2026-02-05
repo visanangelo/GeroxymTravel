@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -26,7 +25,6 @@ type Props = {
 }
 
 export default function LoginForm({ locale, initialError, redirectTo, confirmEmailMessage = false }: Props) {
-  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(initialError || null)
@@ -132,11 +130,10 @@ export default function LoginForm({ locale, initialError, redirectTo, confirmEma
         }
       }
 
-      // Sign-in succeeded – redirect to desired page (login page on the server
-      // will take care of admin vs account redirect based on profile/role).
+      // Sign-in succeeded – full page navigation so UI doesn't stay on loading
+      // (router.push + refresh can leave form stuck; account page redirects admins to /admin).
       setLoading(false)
-      router.push(nextPath)
-      router.refresh()
+      window.location.href = nextPath
     } catch (err) {
       setError('An unexpected error occurred')
       setLoading(false)
