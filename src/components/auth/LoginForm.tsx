@@ -28,6 +28,9 @@ export default function LoginForm({ locale, initialError, redirectTo }: Props) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(initialError || null)
+  const [emailNotConfirmed, setEmailNotConfirmed] = useState(false)
+  const [resendLoading, setResendLoading] = useState(false)
+  const [resendSent, setResendSent] = useState(false)
   const [loading, setLoading] = useState(false)
   const [oauthLoading, setOauthLoading] = useState<'google' | 'facebook' | null>(null)
   const [isSignUp, setIsSignUp] = useState(false)
@@ -61,6 +64,7 @@ export default function LoginForm({ locale, initialError, redirectTo }: Props) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+    setEmailNotConfirmed(false)
     setLoading(true)
 
     try {
@@ -96,7 +100,17 @@ export default function LoginForm({ locale, initialError, redirectTo }: Props) {
         })
 
         if (signInError) {
-          setError(signInError.message)
+          const isEmailNotConfirmed =
+            signInError.message?.toLowerCase().includes('email not confirmed') ||
+            signInError.message?.toLowerCase().includes('email_not_confirmed')
+          if (isEmailNotConfirmed) {
+            setEmailNotConfirmed(true)
+            setError(
+              'Your email is not confirmed yet. Check your inbox and click the confirmation link, or resend it below.'
+            )
+          } else {
+            setError(signInError.message)
+          }
           setLoading(false)
           return
         }
@@ -126,6 +140,29 @@ export default function LoginForm({ locale, initialError, redirectTo }: Props) {
     }
   }
 
+  async function handleResendConfirmation() {
+    if (!email?.trim()) return
+    setResendLoading(true)
+    setResendSent(false)
+    setError(null)
+    try {
+      const supabase = createClient()
+      const { error: resendError } = await supabase.auth.resend({
+        type: 'signup',
+        email: email.trim(),
+      })
+      if (resendError) {
+        setError(resendError.message)
+      } else {
+        setResendSent(true)
+      }
+    } catch {
+      setError('Failed to resend confirmation email')
+    } finally {
+      setResendLoading(false)
+    }
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -141,6 +178,29 @@ export default function LoginForm({ locale, initialError, redirectTo }: Props) {
           {error && (
             <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
               {error}
+            </div>
+          )}
+          {emailNotConfirmed && email && (
+            <div className="space-y-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full"
+                disabled={resendLoading}
+                onClick={handleResendConfirmation}
+              >
+                {resendLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Sending…
+                  </>
+                ) : resendSent ? (
+                  'Email sent – check your inbox'
+                ) : (
+                  'Resend confirmation email'
+                )}
+              </Button>
             </div>
           )}
 

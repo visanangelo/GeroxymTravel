@@ -81,6 +81,37 @@ Aplicația are deja **pagina de sign up** (`/signup`) și formularul cu email + 
 
 ---
 
+## „Error sending confirmation email” (inclusiv 500 Internal Server Error)
+
+Când Supabase afișează **Error sending confirmation email** (sau răspuns **500** la `POST .../auth/v1/signup`), trimiterea prin SMTP către Resend eșuează. Verifică în ordine:
+
+**Dacă primești 500:** În Supabase, la SMTP, schimbă **Port** de la `465` la **`587`** și dă Save. Multe erori 500 vin din handshake-ul TLS pe portul 465; pe 587 (STARTTLS) Supabase se conectează corect la Resend. Apoi încearcă din nou sign up-ul.
+
+1. **Sender email în Supabase**  
+   Trebuie să fie exact **`onboarding@resend.dev`** (fără spații, fără alt domeniu). Câmpul „Sender name” poate fi ex. `Geroxym Travel`. Dacă ai introdus altceva (ex. `noreply@...` fără domeniu verificat), Resend respinge.
+
+2. **API key ca parolă SMTP**  
+   În Supabase, la **Password** (SMTP) lipești **doar** API key-ul Resend (ex. `re_xxxx`), fără spații la început/sfârșit. Copiază din nou din Resend → API Keys dacă e nevoie. Creează un key nou dacă nu e sigur că cel vechi are permisiuni de trimitere.
+
+3. **Host, port, username**  
+   - **Host:** `smtp.resend.com` (fără `https://`)  
+   - **Port:** `465` sau **`587`** – dacă primești 500, folosește **587** (STARTTLS).  
+   - **Username:** `resend` (literal, mic)  
+   Resend acceptă ambele porturi; Supabase uneori se înțelege mai bine cu 587.
+
+4. **Limită Resend fără domeniu**  
+   Cu **`onboarding@resend.dev`**, Resend poate restricționa destinatarii (ex. doar adresa cu care te-ai înregistrat la Resend). Pentru test: înregistrează-te în app cu **același email** ca al contului Resend; dacă primești emailul, limitarea e aceasta. Pentru a trimite la orice adresă, verifică un domeniu în Resend (Pas 2) și folosește expeditor pe acel domeniu.
+
+5. **Logs în Resend**  
+   În **Resend Dashboard** → **Emails**: vezi dacă mesajul apare ca trimis sau ca eșuat și ce eroare dă (ex. „domain not verified”, „invalid from”).
+
+6. **Supabase – autorizare email**  
+   Dacă **nu** ai Custom SMTP activat sau configurat greșit, Supabase folosește serverul lor și trimite doar la adrese din echipa proiectului. Activează Custom SMTP (Pas 3) și salvează din nou setările.
+
+După orice modificare la SMTP în Supabase, dă **Save** și încearcă din nou sign up-ul.
+
+---
+
 ## Pas 4: Variabile de mediu pentru app (emailuri din cod)
 
 În **Vercel** (Environment Variables) sau în **.env.local**:

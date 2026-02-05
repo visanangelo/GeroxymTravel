@@ -55,14 +55,9 @@ export default function SignupForm({ locale, prefillEmail }: Props) {
         }
 
         setMessage(
-          'Account created successfully! Please check your email to verify your account. Your existing bookings have been linked to your account.'
+          'Account created successfully! Please check your email and click the confirmation link. After that, you can sign in. Your existing bookings will be linked to your account.'
         )
-
-        // Redirect after a short delay
-        setTimeout(() => {
-          router.push(`/${locale}/account?tab=bookings`)
-          router.refresh()
-        }, 3000)
+        // Do not redirect to /account – user must confirm email first; otherwise they get "Email not confirmed"
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create account')
