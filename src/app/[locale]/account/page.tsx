@@ -47,6 +47,11 @@ export default async function AccountPage({ params, searchParams }: Props) {
     redirect(`/${locale}/login?redirect=/${locale}/account`)
   }
 
+  // Require confirmed email – friendly redirect so they see "verify inbox" + resend on login
+  if (!user.email_confirmed_at) {
+    redirect(`/${locale}/login?confirm_email=1&redirect=/${locale}/account`)
+  }
+
   const { data: profile } = await supabase
     .from('profiles')
     .select('role')

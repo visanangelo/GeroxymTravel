@@ -15,13 +15,35 @@ export default async function SignupPage({ params, searchParams }: Props) {
 
   const supabase = await createClient()
 
-  // Check if user is already logged in
+  // Check if user is already logged in and email confirmed
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (user) {
+  if (user?.email_confirmed_at) {
     redirect(`/${locale}/account?tab=bookings`)
+  }
+
+  // User exists but email not confirmed – show verify message instead of form
+  if (user && !user.email_confirmed_at) {
+    return (
+      <div className="container mx-auto py-8 px-4">
+        <div className="max-w-md mx-auto">
+          <div className="rounded-lg border bg-card p-6 text-center">
+            <h2 className="text-xl font-semibold mb-2">Verify your email</h2>
+            <p className="text-muted-foreground mb-4">
+              We sent a confirmation link to your email. Please check your inbox (and spam folder), click the link, then sign in.
+            </p>
+            <a
+              href={`/${locale}/login`}
+              className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            >
+              Go to Sign in
+            </a>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (

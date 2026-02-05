@@ -55,9 +55,10 @@ export default function SignupForm({ locale, prefillEmail }: Props) {
         }
 
         setMessage(
-          'Account created successfully! Please check your email and click the confirmation link. After that, you can sign in. Your existing bookings will be linked to your account.'
+          'Account created successfully! Please check your email (and spam folder), click the confirmation link, then sign in.'
         )
-        // Do not redirect to /account – user must confirm email first; otherwise they get "Email not confirmed"
+        setLoading(false)
+        // Do not redirect – user must confirm email first; then they sign in
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create account')
@@ -74,60 +75,70 @@ export default function SignupForm({ locale, prefillEmail }: Props) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-              {error}
-            </div>
-          )}
-
-          {message && (
-            <div className="rounded-md bg-green-500/10 p-3 text-sm text-green-700 dark:text-green-400">
+        {message ? (
+          <>
+            <div className="rounded-md bg-green-500/10 p-4 text-sm text-green-700 dark:text-green-400 mb-4">
               {message}
             </div>
-          )}
+            <Link
+              href={`/${locale}/login`}
+              className="inline-flex w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            >
+              Go to Sign in
+            </Link>
+          </>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+                {error}
+              </div>
+            )}
 
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              disabled={loading}
-              placeholder="you@example.com"
-            />
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                disabled={loading}
+                placeholder="you@example.com"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={loading}
+                placeholder="••••••••"
+                minLength={6}
+              />
+              <p className="text-xs text-muted-foreground">
+                Password must be at least 6 characters
+              </p>
+            </div>
+
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? 'Creating Account...' : 'Create Account'}
+            </Button>
+          </form>
+        )}
+
+        {!message && (
+          <div className="mt-4 text-center text-sm">
+            <span className="text-muted-foreground">Already have an account? </span>
+            <Link href={`/${locale}/login`} className="text-primary hover:underline">
+              Sign in
+            </Link>
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              disabled={loading}
-              placeholder="••••••••"
-              minLength={6}
-            />
-            <p className="text-xs text-muted-foreground">
-              Password must be at least 6 characters
-            </p>
-          </div>
-
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? 'Creating Account...' : 'Create Account'}
-          </Button>
-        </form>
-
-        <div className="mt-4 text-center text-sm">
-          <span className="text-muted-foreground">Already have an account? </span>
-          <Link href={`/${locale}/login`} className="text-primary hover:underline">
-            Sign in
-          </Link>
-        </div>
+        )}
       </CardContent>
     </Card>
   )

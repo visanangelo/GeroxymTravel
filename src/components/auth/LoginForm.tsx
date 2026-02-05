@@ -21,19 +21,24 @@ type Props = {
   initialError?: string
   /** Optional redirect path after OAuth (e.g. /ro/account). Defaults to account. */
   redirectTo?: string
+  /** Show "Please verify your email" message (e.g. after redirect from account). */
+  confirmEmailMessage?: boolean
 }
 
-export default function LoginForm({ locale, initialError, redirectTo }: Props) {
+export default function LoginForm({ locale, initialError, redirectTo, confirmEmailMessage = false }: Props) {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(initialError || null)
-  const [emailNotConfirmed, setEmailNotConfirmed] = useState(false)
+  const [emailNotConfirmed, setEmailNotConfirmed] = useState(!!confirmEmailMessage)
   const [resendLoading, setResendLoading] = useState(false)
   const [resendSent, setResendSent] = useState(false)
   const [loading, setLoading] = useState(false)
   const [oauthLoading, setOauthLoading] = useState<'google' | 'facebook' | null>(null)
   const [isSignUp, setIsSignUp] = useState(false)
+
+  const unconfirmedMessage =
+    'Please verify your email first. Check your inbox (and spam folder) and click the confirmation link, then sign in. You can resend the link below.'
 
   const defaultRedirect = `/${locale}/account`
   const nextPath = redirectTo ?? defaultRedirect
@@ -175,9 +180,9 @@ export default function LoginForm({ locale, initialError, redirectTo }: Props) {
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
-          {error && (
-            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-              {error}
+          {(error || (emailNotConfirmed && confirmEmailMessage)) && (
+            <div className={`rounded-md p-3 text-sm ${error && !confirmEmailMessage ? 'bg-destructive/10 text-destructive' : 'bg-muted text-muted-foreground'}`}>
+              {confirmEmailMessage && !error ? unconfirmedMessage : error}
             </div>
           )}
           {emailNotConfirmed && email && (

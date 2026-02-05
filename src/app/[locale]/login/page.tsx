@@ -4,13 +4,14 @@ import LoginForm from '@/components/auth/LoginForm'
 
 type Props = {
   params: Promise<{ locale: string }>
-  searchParams: Promise<{ error?: string; redirect?: string }>
+  searchParams: Promise<{ error?: string; redirect?: string; confirm_email?: string }>
 }
 
 export default async function LoginPage({ params, searchParams }: Props) {
   const { locale } = await params
-  const { error: errorParam, redirect: redirectParam } = await searchParams
+  const { error: errorParam, redirect: redirectParam, confirm_email: confirmEmailParam } = await searchParams
   const redirectTo = redirectParam && redirectParam.startsWith('/') ? redirectParam : undefined
+  const confirmEmail = confirmEmailParam === '1' || confirmEmailParam === 'true'
 
   // Check if user is already logged in
   const supabase = await createClient()
@@ -18,8 +19,8 @@ export default async function LoginPage({ params, searchParams }: Props) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (user) {
-    // Check if user is admin
+  // Only redirect if user has confirmed email
+  if (user?.email_confirmed_at) {
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
@@ -27,16 +28,16 @@ export default async function LoginPage({ params, searchParams }: Props) {
       .single()
 
     if (profile?.role === 'admin') {
-      redirect('/admin') // Use optimized admin route
+      redirect('/admin')
     } else {
-      redirect(`/${locale}/account`)
+      redirect(redirectTo ?? `/${locale}/account`)
     }
   }
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <LoginForm locale={locale} initialError={errorParam} redirectTo={redirectTo} />
+        <LoginForm locale={locale} initialError={errorParam} redirectTo={redirectTo} confirmEmailMessage={confirmEmail} />
       </div>
     </div>
   )
