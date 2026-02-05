@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
@@ -36,6 +37,7 @@ export default function LoginForm({ locale, initialError, redirectTo, confirmEma
   const [loading, setLoading] = useState(false)
   const [oauthLoading, setOauthLoading] = useState<'google' | 'facebook' | null>(null)
   const [isSignUp, setIsSignUp] = useState(false)
+  const [signUpNeedsConfirmation, setSignUpNeedsConfirmation] = useState(false)
 
   const unconfirmedMessage =
     'Please verify your email first. Check your inbox (and spam folder) and click the confirmation link, then sign in. You can resend the link below.'
@@ -70,13 +72,14 @@ export default function LoginForm({ locale, initialError, redirectTo, confirmEma
     e.preventDefault()
     setError(null)
     setEmailNotConfirmed(false)
+    setSignUpNeedsConfirmation(false)
     setLoading(true)
 
     try {
       const supabase = createClient()
 
       if (isSignUp) {
-        const { error: signUpError } = await supabase.auth.signUp({
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
         })
@@ -87,7 +90,16 @@ export default function LoginForm({ locale, initialError, redirectTo, confirmEma
           return
         }
 
-        // After signup, sign in
+        // If email must be confirmed, do NOT call signInWithPassword – Supabase returns 400 "Email not confirmed"
+        const user = signUpData?.user
+        const needsConfirmation = user && !user.email_confirmed_at
+        if (needsConfirmation) {
+          setSignUpNeedsConfirmation(true)
+          setLoading(false)
+          return
+        }
+
+        // Confirm email is off or already confirmed – sign in and redirect
         const { error: signInError } = await supabase.auth.signInWithPassword({
           email,
           password,
@@ -166,6 +178,28 @@ export default function LoginForm({ locale, initialError, redirectTo, confirmEma
     } finally {
       setResendLoading(false)
     }
+  }
+
+  if (signUpNeedsConfirmation) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Create Account</CardTitle>
+          <CardDescription>Almost there – verify your email</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="rounded-md bg-green-500/10 p-4 text-sm text-green-700 dark:text-green-400">
+            Account created. Please check your email (and spam folder), click the confirmation link, then sign in.
+          </div>
+          <Link
+            href={`/${locale}/login`}
+            className="inline-flex w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            Go to Sign in
+          </Link>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (
