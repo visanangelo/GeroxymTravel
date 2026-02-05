@@ -72,6 +72,7 @@ export default function LoginForm({ locale, initialError, redirectTo, confirmEma
     setSignUpNeedsConfirmation(false)
     setLoading(true)
 
+    let didSignIn = false
     try {
       const supabase = createClient()
 
@@ -130,13 +131,16 @@ export default function LoginForm({ locale, initialError, redirectTo, confirmEma
         }
       }
 
-      // Sign-in succeeded – full page navigation so UI doesn't stay on loading
-      // (router.push + refresh can leave form stuck; account page redirects admins to /admin).
-      setLoading(false)
-      window.location.href = nextPath
+      // Sign-in succeeded – full page navigation; fallback so we never stay stuck on loading
+      didSignIn = true
+      const path = nextPath.startsWith('/') ? nextPath : `/${nextPath}`
+      window.location.assign(path)
+      setTimeout(() => setLoading(false), 1500)
+      return
     } catch (err) {
-      setError('An unexpected error occurred')
-      setLoading(false)
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred')
+    } finally {
+      if (!didSignIn) setLoading(false)
     }
   }
 
