@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Home, Route, Ticket, User, LogOut } from 'lucide-react'
@@ -13,13 +12,15 @@ type Props = {
 }
 
 export default function AccountNav({ locale, variant }: Props) {
-  const router = useRouter()
-
   async function handleLogout() {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    router.push(`/${locale}/login`)
-    router.refresh()
+    try {
+      const supabase = createClient()
+      await supabase.auth.signOut()
+    } catch (e) {
+      console.error('Logout error:', e)
+    }
+    // Full page navigation so server sees cleared session; router.push + refresh can race
+    window.location.href = `/${locale}/login`
   }
 
   return (

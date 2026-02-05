@@ -132,23 +132,10 @@ export default function LoginForm({ locale, initialError, redirectTo, confirmEma
         }
       }
 
-      // Check if user is admin and redirect accordingly
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', user.id)
-          .single()
-
-        if (profile?.role === 'admin') {
-          router.push(`/${locale}/admin`)
-        } else {
-          router.push(`/${locale}/account`)
-        }
-      } else {
-        router.push(`/${locale}/account`)
-      }
+      // Sign-in succeeded – redirect to desired page (login page on the server
+      // will take care of admin vs account redirect based on profile/role).
+      setLoading(false)
+      router.push(nextPath)
       router.refresh()
     } catch (err) {
       setError('An unexpected error occurred')
